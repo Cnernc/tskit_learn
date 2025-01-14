@@ -6,8 +6,8 @@ from sklearn.decomposition import PCA
 from sklearn.pipeline import make_pipeline
 from xgboost import XGBRegressor
 
-from scikit_time.timeseriesmodel import ExpandingModel, RollingModel
-from scikit_time.autoregressivemodel import AutoRegressiveModel
+from tskit_learn.timeseriesmodel import ExpandingModel, RollingModel
+from tskit_learn.autoregressivemodel import AutoRegressiveModel
 
 X = pd.read_parquet("./sample_data/features.parquet")
 y = pd.read_parquet("./sample_data/target.parquet")

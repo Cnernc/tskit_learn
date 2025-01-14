@@ -10,7 +10,7 @@ setup(
     description="A package for time series models with scikit-learn compatibility",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/[your-username]/tsmodel",
+    url="https://github.com/Cnernc/tskit_learn.git",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
