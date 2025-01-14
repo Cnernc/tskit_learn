@@ -159,7 +159,11 @@ class RollingModel(BaseTimeSeriesModel):
         window_size: int, lookahead_steps:int = 0,
         n_jobs: int = _get_cpu_count()
     ) -> None:
-        super().__init__(model, 1, window_size, window_size, lookahead_steps, n_jobs)
+        super().__init__(
+            model = model, freq_retraining=1, rolling_window_size=window_size, 
+            min_train_steps=window_size, lookahead_steps=lookahead_steps, 
+            n_jobs=n_jobs
+        )
 
 class ExpandingModel(BaseTimeSeriesModel):
     def __init__(
@@ -167,4 +171,8 @@ class ExpandingModel(BaseTimeSeriesModel):
         min_train_steps: int = None, lookahead_steps:int = 0,
         n_jobs: int = _get_cpu_count()
     ) -> None:
-        super().__init__(model, freq_retraining, None, min_train_steps, lookahead_steps, n_jobs)
+        super().__init__(
+            model = model, freq_retraining=freq_retraining, rolling_window_size=None, 
+            min_train_steps=min_train_steps, lookahead_steps=lookahead_steps, 
+            n_jobs=n_jobs
+        )
