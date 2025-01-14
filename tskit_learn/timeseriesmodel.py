@@ -3,19 +3,19 @@ import pandas as pd
 import multiprocessing as mp
 from typing import Generator, Tuple
 from sklearn.base import BaseEstimator
-from .utilitaires import _get_cpu_count, _custom_clone_model, _clean_and_reindex
+from .utilitaires import _custom_clone_model, _clean_and_reindex
 
 class BaseTimeSeriesModel:
+
+    n_jobs = max(1, mp.cpu_count() - 2)
         
     def __init__(
         self, model: BaseEstimator | object, 
         freq_retraining: int, rolling_window_size: int, 
         min_train_steps: int, lookahead_steps: int,
-        n_jobs: int = _get_cpu_count()
     ) -> None:
         
         self.model = model
-        self.n_jobs = min(n_jobs, _get_cpu_count())
         self.window_params = {
             "rolling_window_size": rolling_window_size,
             "freq_retraining": freq_retraining,
@@ -29,7 +29,7 @@ class BaseTimeSeriesModel:
         
         if not hasattr(model, "get_params"):
             Warning(f"model can't be cloned: {model.__class__.__name__}, multiprocessing won't be used. You can force the use of multiprocessing by setting n_jobs")
-            self.n_jobs = 1
+            BaseTimeSeriesModel.n_jobs = 1
 
     @staticmethod
     def window_grouper(
@@ -78,7 +78,7 @@ class BaseTimeSeriesModel:
             for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)
         )
 
-        with mp.Pool(self.n_jobs) as pool:
+        with mp.Pool(BaseTimeSeriesModel.n_jobs) as pool:
             results = pool.starmap(
                 BaseTimeSeriesModel._fit_predict_static, tasks
                 )
@@ -105,7 +105,7 @@ class BaseTimeSeriesModel:
         X_tasks = (X.loc[:, col] if isinstance(X.columns, pd.MultiIndex) else X for col in y.columns)
         y_tasks = (y.loc[:, col].dropna() if skipna else y.loc[:, col] for col in y.columns)
         tasks = zip(X_tasks, y_tasks)
-        with mp.Pool(self.n_jobs) as pool:
+        with mp.Pool(BaseTimeSeriesModel.n_jobs) as pool:
             results = pool.starmap(self._fit_predict_ds, tasks)
         return pd.DataFrame(results, index = y.index, columns = y.columns)
  
@@ -145,7 +145,7 @@ class BaseTimeSeriesModel:
     def get_params(self) -> dict:
         return {
             **self.window_params,
-            "n_jobs": self.n_jobs,
+            "n_jobs": BaseTimeSeriesModel.n_jobs,
         }
     
     def copy(self) -> 'BaseTimeSeriesModel':
@@ -157,22 +157,18 @@ class RollingModel(BaseTimeSeriesModel):
     def __init__(
         self, model: BaseEstimator | object, 
         window_size: int, lookahead_steps:int = 0,
-        n_jobs: int = _get_cpu_count()
     ) -> None:
         super().__init__(
             model = model, freq_retraining=1, rolling_window_size=window_size, 
             min_train_steps=window_size, lookahead_steps=lookahead_steps, 
-            n_jobs=n_jobs
         )
 
 class ExpandingModel(BaseTimeSeriesModel):
     def __init__(
         self, model: BaseEstimator | object, freq_retraining: int, 
         min_train_steps: int = None, lookahead_steps:int = 0,
-        n_jobs: int = _get_cpu_count()
     ) -> None:
         super().__init__(
             model = model, freq_retraining=freq_retraining, rolling_window_size=None, 
             min_train_steps=min_train_steps, lookahead_steps=lookahead_steps, 
-            n_jobs=n_jobs
         )

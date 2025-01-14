@@ -2,19 +2,17 @@ import pandas as pd
 import numpy as np
 from sklearn.base import BaseEstimator
 from .timeseriesmodel import BaseTimeSeriesModel
-from .utilitaires import _get_cpu_count
 
 class AutoRegressiveModel(BaseTimeSeriesModel):
 
     def __init__(
-        self, model: BaseEstimator | object, freq_retraining: int, lookahead_steps: int = 0,
-        autoregressive_order: int = 0, integration_order: int = 0, moving_average_order: int = 0, 
-        min_train_steps: int = None, n_jobs: int = _get_cpu_count(), 
+        self, model: BaseEstimator | object, 
+        freq_retraining: int, lookahead_steps: int = 0, min_train_steps: int = None,
+        autoregressive_order: int = 0, integration_order: int = 0, moving_average_order: int = 0,
     ) -> None:
         super().__init__(
             model=model, freq_retraining=freq_retraining, rolling_window_size=None, 
             min_train_steps=min_train_steps, lookahead_steps=lookahead_steps, 
-            n_jobs=n_jobs
         )
         self.autoregressive_order = autoregressive_order
         self.integration_order = integration_order

@@ -7,7 +7,7 @@ name = "tskit_learn"
 version = "0.1.0"
 description = "A scikit-learn wrapper for time series"
 authors = [
-    {name = "Pierre Renucci", email = "your.email@example.com"},
+    {name = "Pierre Renucci", email = "renuccip@icloud.com"},
 ]
 readme = "README.md"
 requires-python = ">=3.8"

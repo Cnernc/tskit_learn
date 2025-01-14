@@ -12,9 +12,6 @@ def _custom_clone_model(model: BaseEstimator | object) -> BaseEstimator | object
         return model.__class__(**model.get_params())
     else:
         return model
-    
-def _get_cpu_count() -> int:
-    return max(1, mp.cpu_count() - 2)
 
 def _clean_and_reindex(X:pd.DataFrame, y:pd.Series = None) -> pd.DataFrame:
     if y is None:
@@ -31,7 +28,7 @@ def _clean_and_reindex(X:pd.DataFrame, y:pd.Series = None) -> pd.DataFrame:
 
 def expanding_decorator(
         f:Callable[[pd.DataFrame, Any], pd.Series],
-        n_jobs:int = _get_cpu_count(),
+        n_jobs:int = max(1, mp.cpu_count() - 2),
     ) -> Callable[[pd.DataFrame, Any], pd.DataFrame]:
 
     def f_expanding(df:pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
@@ -53,7 +50,7 @@ def expanding_apply(
         f:Callable[[pd.DataFrame, Any], pd.Series],
         args:tuple = (),
         kwargs:dict = {},
-        n_jobs:int = _get_cpu_count()
+        n_jobs:int = max(1, mp.cpu_count() - 2)
     ) -> pd.DataFrame:
 
     return expanding_decorator(f, n_jobs)(df, *args, **kwargs)
