@@ -23,7 +23,7 @@ from tskit_learn import ExpandingModel, RollingModel
 model = ExpandingModel(
     model=RandomForestRegressor(), 
     freq_retraining=30, 
-    min_train_days=252
+    min_train_steps=252 # The first 'min_train_steps' values will be NaN
 )
 model.fit(X, y)
 y_hat = model.predict()
@@ -105,7 +105,7 @@ price_hat = model.predict()
 
 ### ExpandingModel
 - `model`: Base estimator (sklearn compatible)
-- `min_train_days`: Minimum number of days before starting predictions
+- `min_train_steps`: Minimum number of days before starting predictions
 - `freq_retraining`: Frequency of model retraining (in days)
 
 ### AutoRegressiveModel

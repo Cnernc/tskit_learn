@@ -9,10 +9,10 @@ class AutoRegressiveModel(BaseTimeSeriesModel):
     def __init__(
         self, model: BaseEstimator | object, freq_retraining: int, 
         autoregressive_order: int = 0, integration_order: int = 0, moving_average_order: int = 0,
-        min_train_days: int = None, n_jobs: int = _get_cpu_count(), 
+        min_train_steps: int = None, n_jobs: int = _get_cpu_count(), 
     ) -> None:
-        super().__init__(model, freq_retraining, None, min_train_days, n_jobs)
-        self.min_train_days = max(min_train_days, autoregressive_order, moving_average_order)
+        super().__init__(model, freq_retraining, None, min_train_steps, n_jobs)
+        self.min_train_steps = max(min_train_steps, autoregressive_order, moving_average_order)
         self.autoregressive_order = autoregressive_order
         self.integration_order = integration_order
         self.moving_average_order = moving_average_order

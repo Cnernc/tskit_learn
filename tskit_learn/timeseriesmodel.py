@@ -9,7 +9,7 @@ class BaseTimeSeriesModel:
         
     def __init__(
         self, model: BaseEstimator | object , freq_retraining: int, rolling_window_size: int, 
-        min_train_days: int, n_jobs: int = _get_cpu_count()
+        min_train_steps: int, n_jobs: int = _get_cpu_count()
     ) -> None:
         
         self.model = model
@@ -17,7 +17,7 @@ class BaseTimeSeriesModel:
         self.window_params = {
             "rolling_window_size": rolling_window_size,
             "freq_retraining": freq_retraining,
-            "min_train_days": min_train_days if min_train_days else freq_retraining,
+            "min_train_steps": min_train_steps if min_train_steps else freq_retraining,
         }
 
         if not isinstance(model,  BaseEstimator):
@@ -30,13 +30,13 @@ class BaseTimeSeriesModel:
 
     @staticmethod
     def window_grouper(
-        X: np.ndarray, rolling_window_size: int, freq_retraining: int, min_train_days: int
+        X: np.ndarray, rolling_window_size: int, freq_retraining: int, min_train_steps: int
     ) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
         
-        assert 2 < min_train_days <= len(X), ("min_train_days should be less than or equal to the length of X and greater than 2")
+        assert 2 < min_train_steps <= len(X), ("min_train_steps should be less than or equal to the length of X and greater than 2")
         assert freq_retraining <= len(X), ("freq_retraining should be less than or equal to the length of X")
         
-        training_date = min_train_days
+        training_date = min_train_steps
 
         def _get_slices(
                 training_date:int, freq_retraining:int, 
@@ -160,6 +160,6 @@ class RollingModel(BaseTimeSeriesModel):
 class ExpandingModel(BaseTimeSeriesModel):
     def __init__(
         self, model: BaseEstimator | object, freq_retraining: int, 
-        min_train_days: int = None, n_jobs: int = _get_cpu_count()
+        min_train_steps: int = None, n_jobs: int = _get_cpu_count()
     ) -> None:
-        super().__init__(model, freq_retraining, None, min_train_days, n_jobs)
+        super().__init__(model, freq_retraining, None, min_train_steps, n_jobs)

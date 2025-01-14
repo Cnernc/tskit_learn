@@ -18,7 +18,7 @@ y = pd.read_parquet("./sample_data/target.parquet")
 model = ExpandingModel(
     model = RandomForestRegressor(), 
     freq_retraining = 30, 
-    min_train_days=252
+    min_train_steps=252
 )
 model.fit(X, y)
 y_hat = model.predict()
