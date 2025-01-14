@@ -38,6 +38,7 @@ y_hat = model.predict()
 ```
 
 ### Forecast with no lookahead
+```python
 
 model = ExpandingModel(
     model=RandomForestRegressor(), 
