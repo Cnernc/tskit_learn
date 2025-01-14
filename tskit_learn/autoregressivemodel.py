@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 from sklearn.base import BaseEstimator
-from scikit_time.timeseriesmodel import BaseTimeSeriesModel
-from scikit_time.utilitaires import _get_cpu_count
+from .timeseriesmodel import BaseTimeSeriesModel
+from .utilitaires import _get_cpu_count
 
 class AutoRegressiveModel(BaseTimeSeriesModel):
 
