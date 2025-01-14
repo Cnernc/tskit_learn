@@ -37,6 +37,17 @@ model.fit(X, y)
 y_hat = model.predict()
 ```
 
+### Forecast with no lookahead
+
+model = ExpandingModel(
+    model=RandomForestRegressor(), 
+    freq_retraining=252, 
+    lookahead_steps = 1 # Will adapt it's training window not to train on look ahead
+) 
+
+model.fit(X, y.shift(-1))
+y_hat = model.predict()
+```
 ### Integration with Scikit-learn Pipeline
 
 ```python
