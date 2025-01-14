@@ -38,7 +38,8 @@ class BaseTimeSeriesModel:
         
         assert 2 < min_train_steps <= len(X), ("min_train_steps should be less than or equal to the length of X and greater than 2")
         assert freq_retraining <= len(X), ("freq_retraining should be less than or equal to the length of X")
-        
+        assert lookahead_steps < min_train_steps, ("lookahead_steps should be less than min_train_steps")
+        assert rolling_window_size is None or rolling_window_size > lookahead_steps, ("rolling_window_size should be greater than lookahead_steps")
         training_date = min_train_steps
 
         def _get_slices(
@@ -46,7 +47,7 @@ class BaseTimeSeriesModel:
                 rolling_window_size:int, lenght:int
             ) -> tuple[slice, slice]:
             if rolling_window_size:
-                training_slice = slice(max(0, training_date - rolling_window_size - 1), training_date - 1 - lookahead_steps)
+                training_slice = slice(max(0, training_date - 1 - rolling_window_size ), training_date - 1 - lookahead_steps)
                 test_slice = slice(training_date, min(training_date + freq_retraining, lenght))
             else:
                 training_slice = slice(0, training_date - 1 - lookahead_steps)
@@ -64,6 +65,8 @@ class BaseTimeSeriesModel:
         model: BaseEstimator | object, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray
     ) -> np.ndarray:
         """Static fit and predict for the multiprocessing"""
+        if np.empty(X_train) or np.empty(y_train) or np.empty(X_test):
+            return np.full((X_test.shape[0], y_train.shape[1]), np.nan)
         return model.fit(X_train, y_train).predict(X_test)
 
     def _fit_predict_ndarray(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
