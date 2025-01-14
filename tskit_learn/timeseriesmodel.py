@@ -20,7 +20,7 @@ class BaseTimeSeriesModel:
         self.window_params = {
             "rolling_window_size": rolling_window_size,
             "freq_retraining": freq_retraining,
-            "min_train_steps": max(min_train_steps, freq_retraining, lookahead_steps),
+            "min_train_steps": max(min_train_steps if min_train_steps else freq_retraining, lookahead_steps),
             "lookahead_steps": lookahead_steps,
         }
 
