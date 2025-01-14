@@ -8,8 +8,10 @@ from .utilitaires import _get_cpu_count, _custom_clone_model, _clean_and_reindex
 class BaseTimeSeriesModel:
         
     def __init__(
-        self, model: BaseEstimator | object , freq_retraining: int, rolling_window_size: int, 
-        min_train_steps: int, n_jobs: int = _get_cpu_count()
+        self, model: BaseEstimator | object, 
+        freq_retraining: int, rolling_window_size: int, 
+        min_train_steps: int, lookahead_steps: int,
+        n_jobs: int = _get_cpu_count()
     ) -> None:
         
         self.model = model
@@ -18,6 +20,7 @@ class BaseTimeSeriesModel:
             "rolling_window_size": rolling_window_size,
             "freq_retraining": freq_retraining,
             "min_train_steps": min_train_steps if min_train_steps else freq_retraining,
+            "lookahead_steps": lookahead_steps,
         }
 
         if not isinstance(model,  BaseEstimator):
@@ -30,7 +33,7 @@ class BaseTimeSeriesModel:
 
     @staticmethod
     def window_grouper(
-        X: np.ndarray, rolling_window_size: int, freq_retraining: int, min_train_steps: int
+        X: np.ndarray, rolling_window_size: int, freq_retraining: int, min_train_steps: int, lookahead_steps:int
     ) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
         
         assert 2 < min_train_steps <= len(X), ("min_train_steps should be less than or equal to the length of X and greater than 2")
@@ -43,10 +46,10 @@ class BaseTimeSeriesModel:
                 rolling_window_size:int, lenght:int
             ) -> tuple[slice, slice]:
             if rolling_window_size:
-                training_slice = slice(max(0, training_date - rolling_window_size - 1), training_date - 1)
+                training_slice = slice(max(0, training_date - rolling_window_size - 1), training_date - 1 - lookahead_steps)
                 test_slice = slice(training_date, min(training_date + freq_retraining, lenght))
             else:
-                training_slice = slice(0, training_date - 1)
+                training_slice = slice(0, training_date - 1 - lookahead_steps)
                 test_slice = slice(training_date, min(training_date + freq_retraining, lenght))
             return training_slice, test_slice
 
@@ -153,13 +156,15 @@ class BaseTimeSeriesModel:
 class RollingModel(BaseTimeSeriesModel):
     def __init__(
         self, model: BaseEstimator | object, 
-        window_size: int, n_jobs: int = _get_cpu_count()
+        window_size: int, lookahead_steps:int = 0,
+        n_jobs: int = _get_cpu_count()
     ) -> None:
-        super().__init__(model, 1, window_size, window_size, n_jobs)
+        super().__init__(model, 1, window_size, window_size, lookahead_steps, n_jobs)
 
 class ExpandingModel(BaseTimeSeriesModel):
     def __init__(
         self, model: BaseEstimator | object, freq_retraining: int, 
-        min_train_steps: int = None, n_jobs: int = _get_cpu_count()
+        min_train_steps: int = None, lookahead_steps:int = 0,
+        n_jobs: int = _get_cpu_count()
     ) -> None:
-        super().__init__(model, freq_retraining, None, min_train_steps, n_jobs)
+        super().__init__(model, freq_retraining, None, min_train_steps, lookahead_steps, n_jobs)

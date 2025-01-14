@@ -42,7 +42,7 @@ y_hat = model.predict()
 model = ExpandingModel(
     model=RandomForestRegressor(), 
     freq_retraining=252, 
-    lookahead_steps = 1 # Will adapt it's training window not to train on look ahead
+    lookahead_steps = 1 # Will adapt its training window not to train on look ahead
 ) 
 
 model.fit(X, y.shift(-1))
