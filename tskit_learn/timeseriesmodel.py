@@ -65,7 +65,7 @@ class BaseTimeSeriesModel:
         model: BaseEstimator | object, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray
     ) -> np.ndarray:
         """Static fit and predict for the multiprocessing"""
-        if np.empty(X_train) or np.empty(y_train) or np.empty(X_test):
+        if (X_train.size == 0) or (y_train.size == 0) or (X_test.size == 0):
             Warning("Empty training or test data fed into the model. Returning nan values")
             return np.full((X_test.shape[0], y_train.shape[1]), np.nan)
         return model.fit(X_train, y_train).predict(X_test)
