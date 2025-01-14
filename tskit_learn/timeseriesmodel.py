@@ -16,10 +16,11 @@ class BaseTimeSeriesModel:
     ) -> None:
         
         self.model = model
+        assert rolling_window_size is None or rolling_window_size > lookahead_steps, ("rolling_window_size should be greater than lookahead_steps")
         self.window_params = {
             "rolling_window_size": rolling_window_size,
             "freq_retraining": freq_retraining,
-            "min_train_steps": min_train_steps if min_train_steps else freq_retraining,
+            "min_train_steps": max(min_train_steps, freq_retraining, lookahead_steps),
             "lookahead_steps": lookahead_steps,
         }
 
@@ -39,7 +40,6 @@ class BaseTimeSeriesModel:
         assert 2 < min_train_steps <= len(X), ("min_train_steps should be less than or equal to the length of X and greater than 2")
         assert freq_retraining <= len(X), ("freq_retraining should be less than or equal to the length of X")
         assert lookahead_steps < min_train_steps, ("lookahead_steps should be less than min_train_steps")
-        assert rolling_window_size is None or rolling_window_size > lookahead_steps, ("rolling_window_size should be greater than lookahead_steps")
         training_date = min_train_steps
 
         def _get_slices(
@@ -66,6 +66,7 @@ class BaseTimeSeriesModel:
     ) -> np.ndarray:
         """Static fit and predict for the multiprocessing"""
         if np.empty(X_train) or np.empty(y_train) or np.empty(X_test):
+            Warning("Empty training or test data fed into the model. Returning nan values")
             return np.full((X_test.shape[0], y_train.shape[1]), np.nan)
         return model.fit(X_train, y_train).predict(X_test)
 
@@ -105,12 +106,12 @@ class BaseTimeSeriesModel:
         return y_hat
     
         #Can't use multiprocessing because there are child multi process called in the loop
-        X_tasks = (X.loc[:, col] if isinstance(X.columns, pd.MultiIndex) else X for col in y.columns)
-        y_tasks = (y.loc[:, col].dropna() if skipna else y.loc[:, col] for col in y.columns)
-        tasks = zip(X_tasks, y_tasks)
-        with mp.Pool(BaseTimeSeriesModel.n_jobs) as pool:
-            results = pool.starmap(self._fit_predict_ds, tasks)
-        return pd.DataFrame(results, index = y.index, columns = y.columns)
+        # X_tasks = (X.loc[:, col] if isinstance(X.columns, pd.MultiIndex) else X for col in y.columns)
+        # y_tasks = (y.loc[:, col].dropna() if skipna else y.loc[:, col] for col in y.columns)
+        # tasks = zip(X_tasks, y_tasks)
+        # with mp.Pool(BaseTimeSeriesModel.n_jobs) as pool:
+        #     results = pool.starmap(self._fit_predict_ds, tasks)
+        # return pd.DataFrame(results, index = y.index, columns = y.columns)
  
     def fit(
         self, X: np.ndarray | pd.DataFrame, y: np.ndarray | pd.Series | pd.DataFrame, skipna: bool = True, 
