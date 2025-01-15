@@ -68,7 +68,9 @@ class _BaseTimeSeriesModel:
         if (X_train.size == 0) or (y_train.size == 0) or (X_test.size == 0):
             Warning("Empty training or test data fed into the model. Returning nan values")
             return np.full((X_test.shape[0], y_train.shape[1]), np.nan)
-        return model.fit(X_train, y_train).predict(X_test)
+        y_hat = model.fit(X_train, y_train).predict(X_test)
+        # del X_train, y_train, X_test
+        return y_hat
 
     def _fit_predict_ndarray(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
         assert X.shape[0] == y.shape[0], ("X and y should have the same number of rows")
@@ -78,9 +80,13 @@ class _BaseTimeSeriesModel:
         y_generator = _BaseTimeSeriesModel.window_grouper(y, **self.window_params)
         
         tasks = (
-            (_custom_clone_model(self.model), X_train, y_train, X_test)
+            (self.model, X_train, y_train, X_test) 
             for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)
         )
+        # tasks = (
+        #     (_custom_clone_model(self.model), X_train.copy(), y_train.copy(), X_test.copy())
+        #     for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)
+        # )
 
         with mp.Pool(_BaseTimeSeriesModel.n_jobs) as pool:
             results = pool.starmap(
