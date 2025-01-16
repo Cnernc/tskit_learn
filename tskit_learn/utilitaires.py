@@ -10,7 +10,9 @@ def _custom_clone_model(model: BaseEstimator | object) -> BaseEstimator | object
         cloned_model = sklearn_clone(model)
         return cloned_model
     except Exception as e:
-        if hasattr(model, "get_params") and hasattr(model, "set_params"):
+        if hasattr(model, "copy"):
+            return model.copy()
+        elif hasattr(model, "get_params") and hasattr(model, "set_params"):
             cloned_model = model.__class__()
             cloned_model.set_params(**model.get_params())
             return cloned_model
