@@ -62,15 +62,43 @@ class BaseTimeSeriesModel:
 
     @staticmethod
     def _fit_predict_static(
-        model: BaseEstimator | object, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray
+        model: BaseEstimator | object, 
+        X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray,
+        scale_before_fit: bool = True,
     ) -> np.ndarray:
         """Static fit and predict for the multiprocessing"""
         if (X_train.size == 0) or (y_train.size == 0) or (X_test.size == 0):
             Warning("Empty training or test data fed into the model. Returning nan values")
             return np.full((X_test.shape[0], y_train.shape[1]), np.nan)
-        y_hat = model.fit(X_train, y_train).predict(X_test)
-        # del X_train, y_train, X_test
+        
+        if scale_before_fit:
+            X_train_mean, X_train_std = X_train.mean(axis=0), X_train.std(axis=0)
+            y_train_mean, y_train_std = y_train.mean(axis=0), y_train.std(axis=0)
+        else: 
+            X_train_mean, X_train_std = 0, 1
+            y_train_mean, y_train_std = 0, 1
+
+        y_train = (y_train - y_train_mean) / y_train_std
+        X_train = (X_train - X_train_mean) / X_train_std
+        X_test = (X_test - X_train_mean) / X_train_std
+        y_hat = model.fit(X_train, y_train).predict(X_test) * y_train_std + y_train_mean
+
+        del X_train, y_train, X_test
         return y_hat
+    
+    # @staticmethod
+    # def _fit_predict_static(
+    #     model: BaseEstimator | object, 
+    #     X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray,
+    # ) -> np.ndarray:
+    #     """Static fit and predict for the multiprocessing"""
+    #     if (X_train.size == 0) or (y_train.size == 0) or (X_test.size == 0):
+    #         Warning("Empty training or test data fed into the model. Returning nan values")
+    #         return np.full((X_test.shape[0], y_train.shape[1]), np.nan)
+        
+    #     y_hat = model.fit(X_train, y_train).predict(X_test)
+    #     # del X_train, y_train, X_test
+    #     return y_hat
 
     def _fit_predict_ndarray(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
         assert X.shape[0] == y.shape[0], ("X and y should have the same number of rows")
