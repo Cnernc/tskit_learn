@@ -78,11 +78,12 @@ class _BaseTimeSeriesModel:
 
         X_generator = _BaseTimeSeriesModel.window_grouper(X, **self.window_params)
         y_generator = _BaseTimeSeriesModel.window_grouper(y, **self.window_params)
-        
+         
         tasks = (
             (self.model, X_train, y_train, X_test) 
             for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)
         )
+
         # tasks = (
         #     (_custom_clone_model(self.model), X_train.copy(), y_train.copy(), X_test.copy())
         #     for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)

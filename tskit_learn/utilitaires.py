@@ -8,8 +8,10 @@ import numpy as np
 def _custom_clone_model(model: BaseEstimator | object) -> BaseEstimator | object:
     if isinstance(model, BaseEstimator):
         return sklearn_clone(model)
-    elif hasattr(model, "get_params"):
-        return model.__class__(**model.get_params())
+    elif hasattr(model, "get_params") and hasattr(model, "set_params"):
+        cloned_model = model.__class__()
+        cloned_model.set_params(**model.get_params())
+        return cloned_model
     else:
         return model
 
