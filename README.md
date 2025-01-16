@@ -36,7 +36,12 @@ tsmodel = RollingModel(
 tsmodel.fit(X, y)
 y_hat = tsmodel.predict()
 
-# Model could be a Regressor or a Classifier  
+```
+### Compatible with classification or regression
+```python
+
+from sklearn.linear_model import LogisticRegression
+
 tsmodel = RollingModel(
     tsmodel=LogisticRegression(), 
     rolling_window=30
