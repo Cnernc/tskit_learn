@@ -16,6 +16,7 @@ def _custom_clone_model(model: BaseEstimator | object) -> BaseEstimator | object
             return cloned_model
         else:
             return model
+            print(e)
 
 def _clean_and_reindex(X:pd.DataFrame, y:pd.Series = None) -> pd.DataFrame:
     if y is None:
