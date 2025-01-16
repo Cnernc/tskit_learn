@@ -8,6 +8,7 @@ from .utilitaires import _custom_clone_model, _clean_and_reindex
 class BaseTimeSeriesModel:
 
     n_jobs = max(1, mp.cpu_count() - 2)
+    auto_scale = False
         
     def __init__(
         self, model: BaseEstimator | object, 
@@ -23,7 +24,7 @@ class BaseTimeSeriesModel:
             "min_train_steps": max(min_train_steps if min_train_steps else freq_retraining, lookahead_steps),
             "lookahead_steps": lookahead_steps,
         }
-
+        
         if not isinstance(model,  BaseEstimator):
             assert hasattr(model, "fit") and hasattr(model, "predict") and hasattr(model, "get_params"), "model should have fit and predict methods"
             Warning(f'TimeSeriesModel is optimised for sklearn.base.BaseEstimator not {model.__class__.__name__}')
@@ -64,14 +65,13 @@ class BaseTimeSeriesModel:
     def _fit_predict_static(
         model: BaseEstimator | object, 
         X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray,
-        scale_before_fit: bool = True,
     ) -> np.ndarray:
         """Static fit and predict for the multiprocessing"""
         if (X_train.size == 0) or (y_train.size == 0) or (X_test.size == 0):
             Warning("Empty training or test data fed into the model. Returning nan values")
             return np.full((X_test.shape[0], y_train.shape[1]), np.nan)
         
-        if scale_before_fit:
+        if BaseTimeSeriesModel.auto_scale:
             X_train_mean, X_train_std = X_train.mean(axis=0), X_train.std(axis=0)
             y_train_mean, y_train_std = y_train.mean(axis=0), y_train.std(axis=0)
         else: 
@@ -81,9 +81,10 @@ class BaseTimeSeriesModel:
         y_train = (y_train - y_train_mean) / y_train_std
         X_train = (X_train - X_train_mean) / X_train_std
         X_test = (X_test - X_train_mean) / X_train_std
+
         y_hat = model.fit(X_train, y_train).predict(X_test) * y_train_std + y_train_mean
 
-        del X_train, y_train, X_test
+        del X_train, y_train, X_test, X_train_mean, X_train_std, y_train_mean, y_train_std
         return y_hat
     
     # @staticmethod
@@ -197,6 +198,10 @@ def set_n_jobs(n_jobs: int) -> int:
     n_jobs = min(n_jobs, mp.cpu_count() - 2)
     BaseTimeSeriesModel.n_jobs = n_jobs
     return n_jobs
+
+def set_auto_scale(auto_scale: bool = True) -> bool:
+    BaseTimeSeriesModel.auto_scale = auto_scale
+    return auto_scale
 
 class RollingModel(BaseTimeSeriesModel):
     def __init__(
