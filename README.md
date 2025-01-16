@@ -20,35 +20,46 @@ from sklearn.ensemble import RandomForestRegressor
 from tskit_learn import ExpandingModel, RollingModel
 
 # ExpandingModel: retrain the model every 30 days using all past data
-model = ExpandingModel(
+tsmodel = ExpandingModel(
     model=RandomForestRegressor(), 
     freq_retraining=30, 
     min_train_steps=252 # The first 'min_train_steps' values will be NaN
 )
-model.fit(X, y)
-y_hat = model.predict()
+tsmodel.fit(X, y)
+y_hat = tsmodel.predict()
 
 # RollingModel: retrain daily using a 30-day rolling window
-model = RollingModel(
+tsmodel = RollingModel(
     model=RandomForestRegressor(), 
     rolling_window=30
 )
-model.fit(X, y)
-y_hat = model.predict()
+tsmodel.fit(X, y)
+y_hat = tsmodel.predict()
+
+# Model could be a Regressor or a Classifier  
+tsmodel = RollingModel(
+    tsmodel=LogisticRegression(), 
+    rolling_window=30
+)
+tsmodel.fit(X, y > 0)
+p = tsmodel.predict()
+
 ```
 
 ### Forecast with no lookahead
 ```python
 
-model = ExpandingModel(
-    model=RandomForestRegressor(), 
+tsmodel = ExpandingModel(
+    tsmodel=RandomForestRegressor(), 
     freq_retraining=252, 
     lookahead_steps = 1 # Will adapt its training window not to train on look ahead
 ) 
-
-model.fit(X, y.shift(-1))
-y_hat = model.predict()
+tsmodel.fit(X, y.shift(-1))
+y_hat = tsmodel.predict()
 ```
+
+
+
 ### Integration with Scikit-learn Pipeline
 
 ```python
@@ -57,10 +68,10 @@ from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
 
 # Works with sklearn pipelines
-model = make_pipeline(PCA(n_components=3), LinearRegression())
-model = ExpandingModel(model=model, freq_retraining=252)
-model.fit(X, X)
-X_hat = model.predict()
+pipe = make_pipeline(PCA(n_components=3), LinearRegression())
+tsmodel = ExpandingModel(model=pipe, freq_retraining=252)
+tsmodel.fit(X, X)
+X_hat = tsmodel.predict()
 ```
 
 ### Support for Non Scikit-learn Models
@@ -70,9 +81,9 @@ from xgboost import XGBRegressor
 
 # Compatible with any model having fit() and predict() methods
 xgb = XGBRegressor()
-model = ExpandingModel(model=xgb, freq_retraining=252)
-model.fit(X, y)
-y_hat = model.predict()
+tsmodel = ExpandingModel(model=xgb, freq_retraining=252)
+tsmodel.fit(X, y)
+y_hat = tsmodel.predict()
 ```
 
 ### MultiIndex Support
@@ -83,8 +94,8 @@ zscore = (y - y.rolling(252).mean()) / y.rolling(252).std()
 X.columns = pd.MultiIndex.from_product([y.columns, X.columns])
 for col in y.columns:
     X.loc[:, (col, 'zscore')] = zscore[col].shift(1)
-model.fit(X, y) 
-y_hat = model.predict()
+tsmodel.fit(X, y) 
+y_hat = tsmodel.predict()
 ```
 
 ### AutoRegressive Features
@@ -93,19 +104,19 @@ y_hat = model.predict()
 from tskit_learn import AutoRegressiveModel
 
 # AutoRegressiveModel with ARIMA features
-model = AutoRegressiveModel(
+tsmodel = AutoRegressiveModel(
     model=RandomForestRegressor(), 
     freq_retraining=252, 
     autoregressive_order=10,  # Use past 10 days as features
     integration_order=1,      # Differentiate target once
     moving_average_order=5,   # Use 5-day MA of residuals
 )
-model.fit(X, y)
-y_hat = model.predict()
+tsmodel.fit(X, y)
+y_hat = tsmodel.predict()
 
 # Geometric integration for price data
-model.fit(X, price, is_geometric=True) 
-price_hat = model.predict()
+tsmodel.fit(X, price, is_geometric=True) 
+price_hat = tsmodel.predict()
 ```
 
 ## Parameters
@@ -113,19 +124,19 @@ price_hat = model.predict()
 ### RollingModel
 - `model`: Base estimator (sklearn compatible)
 - `rolling_window`: Size of the rolling window
-- `freq_retraining`: Frequency of model retraining (in days)
+- `freq_retraining`: Frequency of model retraining (in nb of steps)
 
 ### ExpandingModel
 - `model`: Base estimator (sklearn compatible)
 - `min_train_steps`: Minimum number of days before starting predictions
-- `freq_retraining`: Frequency of model retraining (in days)
+- `freq_retraining`: Frequency of model retraining (in nb of steps)
 
 ### AutoRegressiveModel
 - `model`: Base estimator (sklearn compatible)
 - `autoregressive_order`: Number of lagged values to use
 - `integration_order`: Number of differencing operations
 - `moving_average_order`: Order of moving average features
-- `freq_retraining`: Frequency of model retraining (in days)
+- `freq_retraining`: Frequency of model retraining (in nb of steps)
 
 ## Contributing
 
