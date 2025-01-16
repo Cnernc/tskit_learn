@@ -173,10 +173,11 @@ def set_n_jobs(n_jobs: int) -> int:
 class RollingModel(BaseTimeSeriesModel):
     def __init__(
         self, model: BaseEstimator | object, 
-        window_size: int, lookahead_steps:int = 0,
+        window_size: int, freq_retraining: int = 1, 
+        lookahead_steps:int = 0,
     ) -> None:
         super().__init__(
-            model = model, freq_retraining=1, rolling_window_size=window_size, 
+            model = model, freq_retraining=freq_retraining, rolling_window_size=window_size, 
             min_train_steps=window_size, lookahead_steps=lookahead_steps, 
         )
 

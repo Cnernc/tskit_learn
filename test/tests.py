@@ -3,8 +3,8 @@
 # import multiprocessing as mp
 # import pandas as pd
 # from sklearn.linear_model import LinearRegression
-# from .utilitaires import _custom_clone_model, _clean_and_reindex
-# from .timeseriesmodel import RollingModel, AutoRegressiveModel, set_n_jobs
+# from tskit_learn.utilitaires import _custom_clone_model, _clean_and_reindex
+# from tskit_learn.timeseriesmodel import RollingModel, AutoRegressiveModel, set_n_jobs
 
 # class TestUtilitaires(unittest.TestCase):
 
