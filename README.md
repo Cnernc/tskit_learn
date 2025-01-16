@@ -37,19 +37,6 @@ tsmodel.fit(X, y)
 y_hat = tsmodel.predict()
 
 ```
-### Compatible with classification or regression
-```python
-
-from sklearn.linear_model import LogisticRegression
-
-tsmodel = RollingModel(
-    tsmodel=LogisticRegression(), 
-    rolling_window=30
-)
-tsmodel.fit(X, y > 0)
-p = tsmodel.predict()
-
-```
 
 ### Forecast with no lookahead
 ```python
@@ -63,7 +50,19 @@ tsmodel.fit(X, y.shift(-1))
 y_hat = tsmodel.predict()
 ```
 
+### Compatible with classification or regression
+```python
 
+from sklearn.linear_model import LogisticRegression
+
+tsmodel = RollingModel(
+    tsmodel=LogisticRegression(), 
+    rolling_window=30
+)
+tsmodel.fit(X, y > 0)
+p = tsmodel.predict()
+
+```
 
 ### Integration with Scikit-learn Pipeline
 
