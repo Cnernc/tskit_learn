@@ -78,13 +78,14 @@ class BaseTimeSeriesModel:
             X_train_mean, X_train_std = 0, 1
             y_train_mean, y_train_std = 0, 1
 
-        y_train = (y_train - y_train_mean) / y_train_std
-        X_train = (X_train - X_train_mean) / X_train_std
-        X_test = (X_test - X_train_mean) / X_train_std
+        y_train_scaled = (y_train - y_train_mean) / y_train_std
+        X_train_scaled = (X_train - X_train_mean) / X_train_std
+        X_test_scaled = (X_test - X_train_mean) / X_train_std
 
-        y_hat = model.fit(X_train, y_train).predict(X_test) * y_train_std + y_train_mean
+        y_hat_scaled = model.fit(X_train_scaled, y_train_scaled).predict(X_test_scaled)
+        y_hat = y_hat_scaled * y_train_std + y_train_mean
 
-        del X_train, y_train, X_test, X_train_mean, X_train_std, y_train_mean, y_train_std
+        del X_train, y_train, X_test, X_train_scaled, X_test_scaled, X_train_mean, X_train_std, y_train_mean, y_train_std
         return y_hat
     
     # @staticmethod
