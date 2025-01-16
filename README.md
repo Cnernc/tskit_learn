@@ -118,9 +118,22 @@ tsmodel = AutoRegressiveModel(
 tsmodel.fit(X, y)
 y_hat = tsmodel.predict()
 
-# Geometric integration for price data
+# Geometric integration for price data # NOT AVAILABLE YET
 tsmodel.fit(X, price, is_geometric=True) 
 price_hat = tsmodel.predict()
+```
+
+### Class parameters
+
+```python
+
+from tskit_learn.timeseriesmodel import set_auto_scale, set_n_jobs
+# Set the number of jobs for parallel processing
+set_n_jobs(4)
+
+# Set the auto scaling of the data. If True, the data will be scaled before fitting the model. The scaling is done on the training data for each window and applied to the test data for the corresponding window. False by default.
+set_auto_scale(True)
+
 ```
 
 ## Parameters
