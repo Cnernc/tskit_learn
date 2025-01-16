@@ -6,14 +6,16 @@ import pandas as pd
 import numpy as np
 
 def _custom_clone_model(model: BaseEstimator | object) -> BaseEstimator | object:
-    if isinstance(model, BaseEstimator):
-        return sklearn_clone(model)
-    elif hasattr(model, "get_params") and hasattr(model, "set_params"):
-        cloned_model = model.__class__()
-        cloned_model.set_params(**model.get_params())
+    try:
+        cloned_model = sklearn_clone(model)
         return cloned_model
-    else:
-        return model
+    except Exception as e:
+        if hasattr(model, "get_params") and hasattr(model, "set_params"):
+            cloned_model = model.__class__()
+            cloned_model.set_params(**model.get_params())
+            return cloned_model
+        else:
+            return model
 
 def _clean_and_reindex(X:pd.DataFrame, y:pd.Series = None) -> pd.DataFrame:
     if y is None:
