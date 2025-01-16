@@ -5,7 +5,7 @@ from typing import Generator, Tuple
 from sklearn.base import BaseEstimator
 from .utilitaires import _custom_clone_model, _clean_and_reindex
 
-class _BaseTimeSeriesModel:
+class BaseTimeSeriesModel:
 
     n_jobs = max(1, mp.cpu_count() - 2)
         
@@ -30,7 +30,7 @@ class _BaseTimeSeriesModel:
         
         if not hasattr(model, "get_params"):
             Warning(f"model can't be cloned: {model.__class__.__name__}, multiprocessing won't be used. You can force the use of multiprocessing by setting n_jobs")
-            _BaseTimeSeriesModel.n_jobs = 1
+            BaseTimeSeriesModel.n_jobs = 1
 
     @staticmethod
     def window_grouper(
@@ -76,8 +76,8 @@ class _BaseTimeSeriesModel:
         assert X.shape[0] == y.shape[0], ("X and y should have the same number of rows")
         assert np.all(np.isfinite(X)) and np.all(np.isfinite(y)), ("X and y should not have any missing/infinite values")
 
-        X_generator = _BaseTimeSeriesModel.window_grouper(X, **self.window_params)
-        y_generator = _BaseTimeSeriesModel.window_grouper(y, **self.window_params)
+        X_generator = BaseTimeSeriesModel.window_grouper(X, **self.window_params)
+        y_generator = BaseTimeSeriesModel.window_grouper(y, **self.window_params)
          
         tasks = (
             (self.model, X_train, y_train, X_test) 
@@ -89,9 +89,9 @@ class _BaseTimeSeriesModel:
         #     for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)
         # )
 
-        with mp.Pool(_BaseTimeSeriesModel.n_jobs) as pool:
+        with mp.Pool(BaseTimeSeriesModel.n_jobs) as pool:
             results = pool.starmap(
-                _BaseTimeSeriesModel._fit_predict_static, tasks
+                BaseTimeSeriesModel._fit_predict_static, tasks
                 )
 
         y_hat = np.concatenate(results)
@@ -116,13 +116,13 @@ class _BaseTimeSeriesModel:
         # X_tasks = (X.loc[:, col] if isinstance(X.columns, pd.MultiIndex) else X for col in y.columns)
         # y_tasks = (y.loc[:, col].dropna() if skipna else y.loc[:, col] for col in y.columns)
         # tasks = zip(X_tasks, y_tasks)
-        # with mp.Pool(_BaseTimeSeriesModel.n_jobs) as pool:
+        # with mp.Pool(BaseTimeSeriesModel.n_jobs) as pool:
         #     results = pool.starmap(self._fit_predict_ds, tasks)
         # return pd.DataFrame(results, index = y.index, columns = y.columns)
  
     def fit(
         self, X: np.ndarray | pd.DataFrame, y: np.ndarray | pd.Series | pd.DataFrame, skipna: bool = True, 
-    ) -> '_BaseTimeSeriesModel':
+    ) -> 'BaseTimeSeriesModel':
         
         match (type(X), type(y)):
             case (np.ndarray, np.ndarray):
@@ -156,10 +156,10 @@ class _BaseTimeSeriesModel:
     def get_params(self) -> dict:
         return {
             **self.window_params,
-            "n_jobs": _BaseTimeSeriesModel.n_jobs,
+            "n_jobs": BaseTimeSeriesModel.n_jobs,
         }
     
-    def copy(self) -> '_BaseTimeSeriesModel':
+    def copy(self) -> 'BaseTimeSeriesModel':
         return self.__class__(
             _custom_clone_model(self.model), **self.get_params()
         )
@@ -167,10 +167,10 @@ class _BaseTimeSeriesModel:
 def set_n_jobs(n_jobs: int) -> int:
     n_jobs = max(1, n_jobs)
     n_jobs = min(n_jobs, mp.cpu_count() - 2)
-    _BaseTimeSeriesModel.n_jobs = n_jobs
+    BaseTimeSeriesModel.n_jobs = n_jobs
     return n_jobs
 
-class RollingModel(_BaseTimeSeriesModel):
+class RollingModel(BaseTimeSeriesModel):
     def __init__(
         self, model: BaseEstimator | object, 
         window_size: int, lookahead_steps:int = 0,
@@ -180,7 +180,7 @@ class RollingModel(_BaseTimeSeriesModel):
             min_train_steps=window_size, lookahead_steps=lookahead_steps, 
         )
 
-class ExpandingModel(_BaseTimeSeriesModel):
+class ExpandingModel(BaseTimeSeriesModel):
     def __init__(
         self, model: BaseEstimator | object, freq_retraining: int, 
         min_train_steps: int = None, lookahead_steps:int = 0,

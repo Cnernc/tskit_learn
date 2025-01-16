@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
 from sklearn.base import BaseEstimator
-from .timeseriesmodel import _BaseTimeSeriesModel
+from .timeseriesmodel import BaseTimeSeriesModel
 
-class AutoRegressiveModel(_BaseTimeSeriesModel):
+class AutoRegressiveModel(BaseTimeSeriesModel):
 
     def __init__(
         self, model: BaseEstimator | object, 
