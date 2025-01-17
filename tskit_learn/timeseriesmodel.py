@@ -60,33 +60,6 @@ class BaseTimeSeriesModel:
             training_date += freq_retraining
             yield X_train, X_test
 
-    # @staticmethod
-    # def _fit_predict_static(
-    #     model: BaseEstimator | object, 
-    #     X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray,
-    # ) -> np.ndarray:
-    #     """Static fit and predict for the multiprocessing"""
-    #     if (X_train.size == 0) or (y_train.size == 0) or (X_test.size == 0):
-    #         Warning("Empty training or test data fed into the model. Returning nan values")
-    #         return np.full((X_test.shape[0], y_train.shape[1]), np.nan)
-        
-    #     if BaseTimeSeriesModel.auto_scale:
-    #         X_train_mean, X_train_std = X_train.mean(axis=0), X_train.std(axis=0)
-    #         y_train_mean, y_train_std = y_train.mean(axis=0), y_train.std(axis=0)
-    #     else: 
-    #         X_train_mean, X_train_std = 0, 1
-    #         y_train_mean, y_train_std = 0, 1
-
-    #     y_train_scaled = (y_train - y_train_mean) / y_train_std
-    #     X_train_scaled = (X_train - X_train_mean) / X_train_std
-    #     X_test_scaled = (X_test - X_train_mean) / X_train_std
-
-    #     y_hat_scaled = model.fit(X_train_scaled, y_train_scaled).predict(X_test_scaled)
-    #     y_hat = y_hat_scaled * y_train_std + y_train_mean
-
-    #     del X_train, y_train, X_test, X_train_scaled, X_test_scaled, X_train_mean, X_train_std, y_train_mean, y_train_std
-    #     return y_hat
-    
     @staticmethod
     def _fit_predict_static(
         model: BaseEstimator | object, 
@@ -102,35 +75,39 @@ class BaseTimeSeriesModel:
         return y_hat
 
     def _fit_predict_ndarray(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
-        assert X.shape[0] == y.shape[0], ("X and y should have the same number of rows")
-        assert np.all(np.isfinite(X)) and np.all(np.isfinite(y)), ("X and y should not have any missing/infinite values")
+        try:
+            assert X.shape[0] == y.shape[0], ("X and y should have the same number of rows")
+            assert np.all(np.isfinite(X)) and np.all(np.isfinite(y)), ("X and y should not have any missing/infinite values")
 
-        X_generator = BaseTimeSeriesModel.window_grouper(X, **self.window_params)
-        y_generator = BaseTimeSeriesModel.window_grouper(y, **self.window_params)
-         
-        tasks = (
-            (self.model, X_train, y_train, X_test) 
-            for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)
-        )
+            X_generator = BaseTimeSeriesModel.window_grouper(X, **self.window_params)
+            y_generator = BaseTimeSeriesModel.window_grouper(y, **self.window_params)
+        
+            tasks = (
+                (_custom_clone_model(self.model), X_train.copy(), y_train.copy(), X_test.copy())
+                for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)
+            )
 
-        # tasks = (
-        #     (_custom_clone_model(self.model), X_train.copy(), y_train.copy(), X_test.copy())
-        #     for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)
-        # )
+            with mp.Pool(BaseTimeSeriesModel.n_jobs) as pool:
+                results = pool.starmap(
+                    BaseTimeSeriesModel._fit_predict_static, tasks
+                    )
 
-        with mp.Pool(BaseTimeSeriesModel.n_jobs) as pool:
-            results = pool.starmap(
-                BaseTimeSeriesModel._fit_predict_static, tasks
-                )
+            y_hat = np.concatenate(results)
+            return np.concatenate([np.full(len(y) - len(y_hat), np.nan), y_hat])
+        
+        except Exception as e:
+            print(e, 'returning nan values')
+            return np.full(len(y), np.nan)
 
-        y_hat = np.concatenate(results)
-        return np.concatenate([np.full(len(y) - len(y_hat), np.nan), y_hat])
 
     def _fit_predict_ds(self, X: pd.DataFrame, y: pd.Series) -> pd.Series:
         assert not X.empty, f"No features for {y.name}"
         X = _clean_and_reindex(X, y)
         y_hat_values = self._fit_predict_ndarray(X.values, y.values)
-        return pd.Series(y_hat_values, y.index)
+        y_hat = pd.Series(y_hat_values, y.index)
+        if y_hat.isna().all():
+            Warning(f"An error occured in _fit_predict_ds for {y.name}, returning nan values")
+        return y_hat
 
     def _fit_predict_df(self, X: pd.DataFrame, y: pd.DataFrame, skipna: bool) -> pd.DataFrame:
 
