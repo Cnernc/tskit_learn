@@ -178,7 +178,7 @@ def _fit_predict_multidimensional(
     ) -> pd.DataFrame:
 
     assert isinstance(X.columns, pd.MultiIndex), "can't handle non-multidimensional data for multidim fit"
-    assert all(y.columns.equals(X.columns.get_level_values(0).unique())), "X and y should have the same assets"
+    assert y.columns.equals(X.columns.get_level_values(0).unique()), "X and y should have the same assets"
     df = _reshaper(X, y)
     tasks = ( 
         (_custom_clone_model(model), df_train, df_test) 
