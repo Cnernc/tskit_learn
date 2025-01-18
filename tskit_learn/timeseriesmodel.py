@@ -75,39 +75,35 @@ class BaseTimeSeriesModel:
         return y_hat
 
     def _fit_predict_ndarray(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
-        try:
-            assert X.shape[0] == y.shape[0], ("X and y should have the same number of rows")
-            assert np.all(np.isfinite(X)) and np.all(np.isfinite(y)), ("X and y should not have any missing/infinite values")
-
-            X_generator = BaseTimeSeriesModel.window_grouper(X, **self.window_params)
-            y_generator = BaseTimeSeriesModel.window_grouper(y, **self.window_params)
         
-            tasks = (
-                (_custom_clone_model(self.model), X_train.copy(), y_train.copy(), X_test.copy())
-                for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)
-            )
+        assert X.shape[0] == y.shape[0], ("X and y should have the same number of rows")
+        assert np.all(np.isfinite(X)) and np.all(np.isfinite(y)), ("X and y should not have any missing/infinite values")
 
-            with mp.Pool(BaseTimeSeriesModel.n_jobs) as pool:
-                results = pool.starmap(
-                    BaseTimeSeriesModel._fit_predict_static, tasks
-                    )
+        X_generator = BaseTimeSeriesModel.window_grouper(X, **self.window_params)
+        y_generator = BaseTimeSeriesModel.window_grouper(y, **self.window_params)
+    
+        tasks = (
+            (_custom_clone_model(self.model), X_train.copy(), y_train.copy(), X_test.copy())
+            for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)
+        )
 
-            y_hat = np.concatenate(results)
-            return np.concatenate([np.full(len(y) - len(y_hat), np.nan), y_hat])
-        
-        except Exception as e:
-            print(e, 'returning nan values')
-            return np.full(len(y), np.nan)
+        with mp.Pool(BaseTimeSeriesModel.n_jobs) as pool:
+            results = pool.starmap(
+                BaseTimeSeriesModel._fit_predict_static, tasks
+                )
 
-
+        y_hat = np.concatenate(results)
+        return np.concatenate([np.full(len(y) - len(y_hat), np.nan), y_hat])
+    
     def _fit_predict_ds(self, X: pd.DataFrame, y: pd.Series) -> pd.Series:
         assert not X.empty, f"No features for {y.name}"
         X = _clean_and_reindex(X, y)
-        y_hat_values = self._fit_predict_ndarray(X.values, y.values)
-        y_hat = pd.Series(y_hat_values, y.index)
-        if y_hat.isna().all():
-            Warning(f"An error occured in _fit_predict_ds for {y.name}, returning nan values")
-        return y_hat
+        try:
+            y_hat_values = self._fit_predict_ndarray(X.values, y.values)
+        except Exception as e:
+            print(f'An error occurred during the fit of {y.name}. Returning NaN values. {e}')
+            y_hat_values = np.nan
+        return pd.Series(data=y_hat_values, name=y.name, index=y.index)
 
     def _fit_predict_df(self, X: pd.DataFrame, y: pd.DataFrame, skipna: bool) -> pd.DataFrame:
 
