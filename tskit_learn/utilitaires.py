@@ -149,7 +149,7 @@ def _window_splitter(
 
     assert 'date' in df.columns
 
-    dates = df['date'].unique().sort_values()
+    dates = df['date'].sort_values().unique()
 
     def _get_slice(i:int) -> Tuple[pd.DataFrame, pd.DataFrame]:
         # The whole stuff assume that dates are on a regular grid
