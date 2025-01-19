@@ -164,7 +164,7 @@ def _window_splitter(
 
 def _reshaper(X:pd.DataFrame, y:pd.DataFrame) -> pd.DataFrame:
     X = _clean_and_reindex(X, y)
-    y.columns = y.columns.map(lambda x: (x, 'target'))
+    y = pd.DataFrame(y, columns=pd.MultiIndex.from_tuples([(col, 'target') for col in y.columns]))
     df = (
         pd.concat([X, y], axis=1)
         .reorder_levels([1, 0], axis=1)
@@ -173,7 +173,6 @@ def _reshaper(X:pd.DataFrame, y:pd.DataFrame) -> pd.DataFrame:
     )
     df = df[df['target'].notna()]
     df.index = df.index.set_names(['date', 'asset'])
-    print(df.head())
     df = df.reset_index().sort_values(['date', 'asset'])
     return df 
 
