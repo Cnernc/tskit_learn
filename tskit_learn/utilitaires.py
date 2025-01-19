@@ -212,7 +212,9 @@ def _fit_predict_multidimensional(
         .reindex(y.index, method='ffill')
         .reindex(y.columns, axis=1)
     )
-
+    if any(y_hat.isna().all()):
+        print(f"Warning: {y_hat[y_hat.isna().all()].columns} models returned NaN values")
+        
     return y_hat
 
 def _fit_predict_df(
