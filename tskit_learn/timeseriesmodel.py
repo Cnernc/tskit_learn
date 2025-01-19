@@ -51,8 +51,9 @@ class BaseTimeSeriesModel:
         n_folds = (len(y.index) - self.window_params["min_train_steps"]) // self.window_params["freq_retraining"]
         n_target = (len(y.columns) if independant_fit else 1)
         n_datapoints = (len(y.index) * len(y.columns)) // ( n_target * n_folds )
+        n_features = len(X.columns) // n_target
         model_name = self.model.__class__.__name__
-        print(f"Fit: {n_folds * n_target} different models of {model_name} for a {n_datapoints} datapoints set each")
+        print(f"Fit: {n_folds * n_target} different models of {model_name} for a {n_datapoints} datapoints set each with {n_features} features")
 
         match (type(X), type(y)):
             case (np.ndarray, np.ndarray):
