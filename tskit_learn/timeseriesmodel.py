@@ -43,7 +43,7 @@ class BaseTimeSeriesModel:
     ) -> 'BaseTimeSeriesModel':
         
         kwargs = {
-            "model": self.model,"X": X,"y": y,
+            "model": self.model, "X": X, "y": y,
             "window_params": self.window_params,
             "n_jobs": BaseTimeSeriesModel.n_jobs,
             }
