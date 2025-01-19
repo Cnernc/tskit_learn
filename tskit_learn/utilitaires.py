@@ -163,8 +163,11 @@ def _window_splitter(
         yield df[training_slice], df[test_slice]
 
 def _reshaper(X:pd.DataFrame, y:pd.DataFrame) -> pd.DataFrame:
+    assert isinstance(X.columns, pd.MultiIndex), "can't handle non-multidimensional data for multidim fit"
+    assert y.columns.equals(X.columns.get_level_values(0).unique()), "X and y should have the same assets"
+    X, y = X.sort_index(axis=1).sort_index(axis=0), y.sort_index(axis=1).sort_index(axis=0)
     X = _clean_and_reindex(X, y)
-    y = pd.DataFrame(y, columns=pd.MultiIndex.from_tuples([(col, 'target') for col in y.columns]))
+    y.columns = y.columns.map(lambda x: (x, 'target'))
     df = (
         pd.concat([X, y], axis=1)
         .reorder_levels([1, 0], axis=1)
@@ -192,11 +195,8 @@ def _fit_predict_multidimensional(
         n_jobs: int
     ) -> pd.DataFrame:
 
-    X, y = X.sort_index(axis=1).sort_index(axis=0), y.sort_index(axis=1).sort_index(axis=0)
-
-    assert isinstance(X.columns, pd.MultiIndex), "can't handle non-multidimensional data for multidim fit"
-    assert y.columns.equals(X.columns.get_level_values(0).unique()), "X and y should have the same assets"
     df = _reshaper(X, y)
+
     tasks = ( 
         (_custom_clone_model(model), df_train, df_test) 
         for df_train, df_test in _window_splitter(df, freq_retraining, min_train_steps, rolling_window_size, lookahead_steps)
