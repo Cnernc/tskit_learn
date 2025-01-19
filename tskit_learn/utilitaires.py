@@ -182,7 +182,7 @@ def _fit_predict_shaped(
     X_train = df_train.drop(columns=['date', 'asset', 'target'])
     y_train = df_train['target']
     X_test  = df_test.drop(columns=['date', 'asset', 'target'])
-    df_test['pred'] = model.fit(X_train, y_train).predict(X_test).values 
+    df_test['pred'] = model.fit(X_train, y_train).predict(X_test)
     df_test = df_test.set_index(['date', 'asset']).unstack()
     return df_test['pred']
 
