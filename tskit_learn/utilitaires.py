@@ -201,17 +201,24 @@ def _fit_predict_multidimensional(
         for df_train, df_test in _window_splitter(df, freq_retraining, min_train_steps, rolling_window_size, lookahead_steps)
     )
     with mp.Pool(n_jobs) as pool:
-        results = pool.map(_fit_predict_shaped, tasks)
+        results = pool.starmap(_fit_predict_shaped, tasks)
 
     return pd.concat(results, axis=0).reindex(y.index, method='ffill')
 
 def _fit_predict_df(
         model:BaseEstimator | object, X: pd.DataFrame, y: pd.DataFrame, 
-        independant_fit:bool, skipna: bool, window_params: dict, n_jobs: int
+        freq_retraining: int, min_train_steps: int, rolling_window_size: int, lookahead_steps:int, 
+        independant_fit:bool, skipna: bool, n_jobs: int
     ) -> pd.DataFrame:
 
     if independant_fit:
-        return _fit_predict_unidimensional(model, X, y, skipna, window_params, n_jobs)
+        return _fit_predict_unidimensional(model, X, y, skipna, 
+            freq_retraining, min_train_steps, rolling_window_size, lookahead_steps, 
+            n_jobs
+        )
     else:
         raise NotImplementedError
-        return _fit_predict_multidimensional(model, X, y, window_params, n_jobs)
+        return _fit_predict_multidimensional(model, X, y, 
+            freq_retraining, min_train_steps, rolling_window_size, lookahead_steps, 
+            n_jobs
+        )
