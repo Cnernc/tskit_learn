@@ -54,9 +54,7 @@ def _window_grouper(
         return training_slice, test_slice
 
     for training_date in range(min_train_steps, len(X), freq_retraining):
-        training_slice, test_slice = _get_slices(
-            training_date, freq_retraining, rolling_window_size, len(X), lookahead_steps
-            )
+        training_slice, test_slice = _get_slices()
         X_train, X_test = X[training_slice], X[test_slice]
         yield X_train, X_test
 
