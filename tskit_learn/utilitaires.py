@@ -166,6 +166,7 @@ def _reshaper(X:pd.DataFrame, y:pd.DataFrame) -> pd.DataFrame:
     X, y = X.sort_index(axis=1).sort_index(axis=0), y.sort_index(axis=1).sort_index(axis=0)
     assert isinstance(X.columns, pd.MultiIndex), "can't handle non-multidimensional data for multidim fit"
     assert y.columns.equals(X.columns.get_level_values(0).unique()), "X and y should have the same assets"
+    
     X = _clean_and_reindex(X, y)
     y.columns = y.columns.map(lambda x: (x, 'target'))
     df = (
