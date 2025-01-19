@@ -210,6 +210,7 @@ def _fit_predict_multidimensional(
         .sort_index(axis=1)
         .sort_index(axis=0)
         .reindex(y.index, method='ffill')
+        .reindex(y.columns, axis=1)
     )
 
     return y_hat
