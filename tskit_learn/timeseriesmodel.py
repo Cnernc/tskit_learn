@@ -43,7 +43,7 @@ class BaseTimeSeriesModel:
     ) -> 'BaseTimeSeriesModel':
         
         kwargs = {
-            "model": self.model, "X": X, "y": y,
+            "model": self.model, "X": X.copy(), "y": y.copy(),
             **self.window_params,
             "n_jobs": BaseTimeSeriesModel.n_jobs,
             }
@@ -61,8 +61,8 @@ class BaseTimeSeriesModel:
                     (np.ndarray, np.ndarray) ; (pd.DataFrame, pd.Series) ; (pd.DataFrame, pd.DataFrame)
                     """
                 )
-        self.y, self.X, self.y_hat = y.copy(), X.copy(), y_hat.copy()
-
+            
+        self.y_hat = y_hat.copy()
         return self 
     
     def predict(self, _: None= None) -> np.ndarray | pd.Series | pd.DataFrame:
@@ -74,11 +74,6 @@ class BaseTimeSeriesModel:
             independant_fit:bool = True, skipna: bool = True, 
         ) -> np.ndarray | pd.Series | pd.DataFrame:
         return self.fit(X, y, independant_fit, skipna).predict()
-    
-    @property
-    def residual(self) -> np.ndarray | pd.Series | pd.DataFrame:
-        assert hasattr(self, "y_hat"), "Model should be fit before computing the residual"
-        return self.y - self.predict()
     
     def get_params(self) -> dict:
         return {
