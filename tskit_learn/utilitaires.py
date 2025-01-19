@@ -191,6 +191,8 @@ def _fit_predict_multidimensional(
         n_jobs: int
     ) -> pd.DataFrame:
 
+    X, y = X.sort_index(axis=1), y.sort_index(axis=1)
+
     assert isinstance(X.columns, pd.MultiIndex), "can't handle non-multidimensional data for multidim fit"
     assert y.columns.equals(X.columns.get_level_values(0).unique()), "X and y should have the same assets"
     df = _reshaper(X, y)
