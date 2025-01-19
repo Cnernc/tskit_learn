@@ -166,7 +166,7 @@ def _reshaper(X:pd.DataFrame, y:pd.DataFrame) -> pd.DataFrame:
     X, y = X.sort_index(axis=1).sort_index(axis=0), y.sort_index(axis=1).sort_index(axis=0)
     assert isinstance(X.columns, pd.MultiIndex), "can't handle non-multidimensional data for multidim fit"
     assert y.columns.equals(X.columns.get_level_values(0).unique()), "X and y should have the same assets"
-    
+
     X = _clean_and_reindex(X, y)
     y.columns = y.columns.map(lambda x: (x, 'target'))
     df = (
@@ -222,13 +222,11 @@ def _fit_predict_df(
     ) -> pd.DataFrame:
 
     if independant_fit:
-        print(f"Independant_fit: {len(y.columns)} different models to train each of the {len(y.columns)} target")
         return _fit_predict_unidimensional(model, X, y, skipna, 
             freq_retraining, min_train_steps, rolling_window_size, lookahead_steps, 
             n_jobs
         )
     else:
-        print(f"Multidimensional fit: 1 model to train all the {len(y.columns)} targets")
         return _fit_predict_multidimensional(model, X, y, 
             freq_retraining, min_train_steps, rolling_window_size, lookahead_steps, 
             n_jobs
