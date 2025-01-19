@@ -154,7 +154,7 @@ def _window_splitter(
     for i in range(min_train_steps, len(dates), freq_retraining):
         start_training = max(0, i-rolling_window_size) if rolling_window_size else 0
         end_training = i - lookahead_steps
-        start_test, = i
+        start_test = i
         end_test = min(i+freq_retraining, len(dates) - 1)
 
         training_slice = ( dates[start_training] <= df['date']) & (df['date'] < dates[end_training]) 
