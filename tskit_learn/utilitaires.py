@@ -173,6 +173,7 @@ def _reshaper(X:pd.DataFrame, y:pd.DataFrame) -> pd.DataFrame:
     )
     df = df[df['target'].notna()]
     df.index = df.index.set_names(['date', 'asset'])
+    print(df.head())
     df = df.reset_index().sort_values(['date', 'asset'])
     return df 
 
@@ -192,7 +193,7 @@ def _fit_predict_multidimensional(
         n_jobs: int
     ) -> pd.DataFrame:
 
-    X, y = X.sort_index(axis=1), y.sort_index(axis=1)
+    X, y = X.sort_index(axis=1).sort_index(axis=0), y.sort_index(axis=1).sort_index(axis=0)
 
     assert isinstance(X.columns, pd.MultiIndex), "can't handle non-multidimensional data for multidim fit"
     assert y.columns.equals(X.columns.get_level_values(0).unique()), "X and y should have the same assets"
@@ -204,7 +205,14 @@ def _fit_predict_multidimensional(
     with mp.Pool(n_jobs) as pool:
         results = pool.starmap(_fit_predict_shaped, tasks)
 
-    return pd.concat(results, axis=0).reindex(y.index, method='ffill')
+    y_hat = (
+        pd.concat(results, axis=0)
+        .sort_index(axis=1)
+        .sort_index(axis=0)
+        .reindex(y.index, method='ffill')
+    )
+
+    return y_hat
 
 def _fit_predict_df(
         model:BaseEstimator | object, X: pd.DataFrame, y: pd.DataFrame, 
