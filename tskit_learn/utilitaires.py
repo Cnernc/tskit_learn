@@ -151,18 +151,15 @@ def _window_splitter(
 
     dates = df['date'].sort_values().unique()
 
-    def _get_slice(i:int) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        # The whole stuff assume that dates are on a regular grid
-        if rolling_window_size:
-            training_slice = (df['date'] < dates[i - lookahead_steps]) & ( dates[i-rolling_window_size] <= df['date'])
-            test_slice = (dates[i] <= df['date']) & (df['date'] < dates[i+freq_retraining])
-        else:
-            training_slice = (df['date'] < dates[i - lookahead_steps])
-            test_slice = (dates[i] <= df['date']) & (df['date'] < dates[i+freq_retraining])
-        return training_slice, test_slice
-
     for i in range(min_train_steps, len(dates), freq_retraining):
-        training_slice, test_slice = _get_slice(i)
+        start_training = max(0, i-rolling_window_size) if rolling_window_size else 0
+        end_training = i - lookahead_steps
+        start_test, = i
+        end_test = min(i+freq_retraining, len(dates) - 1)
+
+        training_slice = ( dates[start_training] <= df['date']) & (df['date'] < dates[end_training]) 
+        test_slice = (dates[start_test] <= df['date']) & (df['date'] < dates[end_test])
+
         yield df[training_slice], df[test_slice]
 
 def _reshaper(X:pd.DataFrame, y:pd.DataFrame) -> pd.DataFrame:
