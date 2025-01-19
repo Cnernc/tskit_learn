@@ -47,13 +47,14 @@ class BaseTimeSeriesModel:
             **self.window_params,
             "n_jobs": BaseTimeSeriesModel.n_jobs,
         }
-        
-        n_folds = (len(y.index) - self.window_params["min_train_steps"]) // self.window_params["freq_retraining"]
-        n_target = (len(y.columns) if isinstance(y, pd.DataFrame) and independant_fit else 1)
-        n_datapoints = (len(y.index) * len(y.columns)) // ( n_target * n_folds )
-        n_features = len(X.columns) // len(y.columns) if isinstance(y, pd.DataFrame) else 1
-        model_name = self.model.__class__.__name__
-        print(f"Fit: {n_folds * n_target} different models of {model_name} for a {n_datapoints} datapoints set each with {n_features} features")
+        print({
+            "n folds": (len(y.index) - self.window_params["min_train_steps"]) // self.window_params["freq_retraining"],
+            "n features": len(X.columns) / (len(y.columns) if isinstance(y, pd.DataFrame) else 1),
+            "n columns": len(y.columns) if isinstance(y, pd.DataFrame) else 1,
+            "n datapoints": len(y.index) * ( 1 if isinstance(y, pd.DataFrame) and independant_fit else len(y.columns) ),
+            "n trainings": (len(y.columns) if independant_fit else 1) * (len(y.index) - self.window_params["min_train_steps"]) // self.window_params["freq_retraining"],
+            "model": self.model.__class__.__name__,
+        })
 
         match (type(X), type(y)):
             case (np.ndarray, np.ndarray):
