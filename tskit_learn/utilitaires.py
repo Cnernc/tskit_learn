@@ -37,7 +37,7 @@ def _clean_and_reindex(X:pd.DataFrame, y:pd.Series = None) -> pd.DataFrame:
     )
 
 def _window_grouper(
-    X: np.ndarray, rolling_window_size: int, freq_retraining: int, min_train_steps: int, lookahead_steps:int
+    X: np.ndarray, freq_retraining: int, min_train_steps: int, rolling_window_size: int, lookahead_steps:int, 
 ) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
     
     assert 2 < min_train_steps <= len(X), ("min_train_steps should be less than or equal to the length of X and greater than 2")
@@ -72,14 +72,16 @@ def _fit_predict_static(
     return y_hat
 
 def _fit_predict_ndarray(
-        model: BaseEstimator | object, X: np.ndarray, y: np.ndarray, window_params: dict, n_jobs: int
+        model: BaseEstimator | object, X: np.ndarray, y: np.ndarray, 
+        freq_retraining: int, min_train_steps: int, rolling_window_size: int, lookahead_steps:int, 
+        n_jobs: int
     ) -> np.ndarray:
     
     assert X.shape[0] == y.shape[0], ("X and y should have the same number of rows")
     assert np.all(np.isfinite(X)) and np.all(np.isfinite(y)), ("X and y should not have any missing/infinite values")
 
-    X_generator = _window_grouper(X, **window_params)
-    y_generator = _window_grouper(y, **window_params)
+    X_generator = _window_grouper(X, freq_retraining, min_train_steps, rolling_window_size, lookahead_steps)
+    y_generator = _window_grouper(y, freq_retraining, min_train_steps, rolling_window_size, lookahead_steps)
 
     tasks = (
         ( _custom_clone_model(model), X_train.copy(), y_train.copy(), X_test.copy() )
@@ -95,14 +97,20 @@ def _fit_predict_ndarray(
     return np.concatenate([np.full(len(y) - len(y_hat), np.nan), y_hat])
 
 def _fit_predict_ds(
-        model: BaseEstimator | object, X: pd.DataFrame, y: pd.Series, window_params: dict, skipna: bool, n_jobs: int
+        model: BaseEstimator | object, X: pd.DataFrame, y: pd.Series,
+        freq_retraining: int, min_train_steps: int, rolling_window_size: int, lookahead_steps:int, 
+        skipna: bool, n_jobs: int
         ) -> pd.Series:
     assert not X.empty, f"No features for {y.name}"
 
     X = _clean_and_reindex(X, y)    
     y_ = y if not skipna else y.dropna()
     try:
-        y_hat_values = _fit_predict_ndarray(model, X.values, y_.values, window_params, n_jobs)
+        y_hat_values = _fit_predict_ndarray(
+            model, X.values, y_.values, 
+            freq_retraining, min_train_steps, rolling_window_size, lookahead_steps, 
+            n_jobs
+        )
     except Exception as e:
         print(f'An error occurred during the fit of {y.name}. Returning NaN values. {e}')
         y_hat_values = np.nan
@@ -115,14 +123,20 @@ def _fit_predict_ds(
 ##### train each asset separately     #####
 
 def _fit_predict_unidimensional(
-        model, X: pd.DataFrame, y: pd.DataFrame, skipna: bool, window_params: dict, n_jobs: int
+        model, X: pd.DataFrame, y: pd.DataFrame, skipna: bool, 
+        freq_retraining: int, min_train_steps: int, rolling_window_size: int, lookahead_steps:int, 
+        n_jobs: int
     ) -> pd.DataFrame:
 
     y_hat = pd.DataFrame(index = y.index)
     for col in y.columns:
         X_ = X.loc[:, col] if isinstance(X.columns, pd.MultiIndex) else X
         y_ = y.loc[:, col] if not skipna else y.loc[:, col].dropna()
-        y_hat[col] = _fit_predict_ds(model, X_, y_, window_params, skipna, n_jobs)
+        y_hat[col] = _fit_predict_ds(
+            model, X_, y_, 
+            freq_retraining, min_train_steps, rolling_window_size, lookahead_steps, 
+            skipna, n_jobs
+        )
 
     return y_hat
 
@@ -132,7 +146,7 @@ def _fit_predict_unidimensional(
 ##### and the training is made on the whole dataset #####
 
 def _window_splitter(
-        df:pd.DataFrame, freq_retraining:int, min_periods:int, rolling_window_size:int
+        df:pd.DataFrame, freq_retraining:int, min_train_steps:int, rolling_window_size:int, lookahead_steps:int
     ) -> Generator[Tuple[pd.DataFrame, pd.DataFrame], None, None]:
 
     assert 'date' in df.columns
@@ -142,14 +156,14 @@ def _window_splitter(
     def _get_slice(i:int) -> Tuple[pd.DataFrame, pd.DataFrame]:
         # The whole stuff assume that dates are on a regular grid
         if rolling_window_size:
-            training_slice = (df['date'] < dates[i]) & ( dates[i-rolling_window_size] <= df['date'])
+            training_slice = (df['date'] < dates[i - lookahead_steps]) & ( dates[i-rolling_window_size] <= df['date'])
             test_slice = (dates[i] <= df['date']) & (df['date'] < dates[i+freq_retraining])
         else:
-            training_slice = (df['date'] < dates[i])
+            training_slice = (df['date'] < dates[i - lookahead_steps])
             test_slice = (dates[i] <= df['date']) & (df['date'] < dates[i+freq_retraining])
         return training_slice, test_slice
 
-    for i in range(min_periods, len(dates), freq_retraining):
+    for i in range(min_train_steps, len(dates), freq_retraining):
         training_slice, test_slice = _get_slice(i)
         yield df[training_slice], df[test_slice]
 
@@ -174,7 +188,9 @@ def _fit_predict_shaped(
     return df_test['pred']
 
 def _fit_predict_multidimensional(
-        model:BaseEstimator | object, X: pd.DataFrame, y: pd.DataFrame, window_params: dict, n_jobs: int
+        model:BaseEstimator | object, X: pd.DataFrame, y: pd.DataFrame, 
+        freq_retraining: int, min_train_steps: int, rolling_window_size: int, lookahead_steps:int, 
+        n_jobs: int
     ) -> pd.DataFrame:
 
     assert isinstance(X.columns, pd.MultiIndex), "can't handle non-multidimensional data for multidim fit"
@@ -182,7 +198,7 @@ def _fit_predict_multidimensional(
     df = _reshaper(X, y)
     tasks = ( 
         (_custom_clone_model(model), df_train, df_test) 
-        for df_train, df_test in _window_splitter(df, **window_params)
+        for df_train, df_test in _window_splitter(df, freq_retraining, min_train_steps, rolling_window_size, lookahead_steps)
     )
     with mp.Pool(n_jobs) as pool:
         results = pool.map(_fit_predict_shaped, tasks)
