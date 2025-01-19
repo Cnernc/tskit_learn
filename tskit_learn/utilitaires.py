@@ -210,12 +210,13 @@ def _fit_predict_df(
     ) -> pd.DataFrame:
 
     if independant_fit:
+        print(f"Independant_fit: {len(y.columns)} different models to train each of the {len(y.columns)} target")
         return _fit_predict_unidimensional(model, X, y, skipna, 
             freq_retraining, min_train_steps, rolling_window_size, lookahead_steps, 
             n_jobs
         )
     else:
-        raise NotImplementedError
+        print(f"Multidimensional fit: 1 model to train all the {len(y.columns)} targets")
         return _fit_predict_multidimensional(model, X, y, 
             freq_retraining, min_train_steps, rolling_window_size, lookahead_steps, 
             n_jobs
