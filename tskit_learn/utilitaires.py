@@ -40,9 +40,9 @@ def _window_grouper(
     X: np.ndarray, freq_retraining: int, min_train_steps: int, rolling_window_size: int, lookahead_steps:int, 
 ) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
     
-    assert 2 < min_train_steps <= len(X) - min_train_steps, ("min_train_steps should be less than or equal to the length of X and greater than 2")
-    assert freq_retraining <= len(X), ("freq_retraining should be less than or equal to the length of X")
+    assert min_train_steps < len(X), ("min_train_steps should be less than or equal to the length of X")
     assert lookahead_steps < min_train_steps, ("lookahead_steps should be less than min_train_steps")
+    assert rolling_window_size is None or lookahead_steps < rolling_window_size, ("rolling_window_size should be greater than lookahead_steps")
 
     training_date = min_train_steps
     while training_date < len(X) - 1:
@@ -50,12 +50,21 @@ def _window_grouper(
         end_training = training_date - 1 - lookahead_steps
         start_test = training_date
         end_test = min(training_date + freq_retraining, len(X))
+        assert start_training < end_training < start_test < end_test, "The slices are not correctly defined"
         yield X[start_training:end_training], X[start_test:end_test]
         training_date += freq_retraining
+
 def _fit_predict_static(
-        model: BaseEstimator | object, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray,
+        model: BaseEstimator | object, 
+        X_train: np.ndarray, y_train: np.ndarray, 
+        X_test: np.ndarray, y_test: np.ndarray
     ) -> np.ndarray:
-    y_hat = model.fit(X_train, y_train).predict(X_test)
+    try:
+        y_hat = model.fit(X_train, y_train).predict(X_test)
+        assert y_hat.shape == y_test.shape, "The shape of the prediction is not the same as the shape of the test set"
+    except Exception as e:
+        print(f"An error occurred during the fit of the model. Returning NaN values. {e}")
+        y_hat = np.full(len(y_test), np.nan)
     return y_hat
 
 def _fit_predict_ndarray(
@@ -68,8 +77,8 @@ def _fit_predict_ndarray(
     y_generator = _window_grouper(y, freq_retraining, min_train_steps, rolling_window_size, lookahead_steps)
 
     tasks = (
-        ( _custom_clone_model(model), X_train.copy(), y_train.copy(), X_test.copy() )
-        for (X_train, X_test), (y_train, _) in zip(X_generator, y_generator)
+        ( _custom_clone_model(model), X_train.copy(), y_train.copy(), X_test.copy(), y_test.copy() )
+        for (X_train, X_test), (y_train, y_test) in zip(X_generator, y_generator)
     )
 
     # with mp.Pool(n_jobs) as pool:
