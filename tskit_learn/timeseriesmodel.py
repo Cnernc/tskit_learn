@@ -49,7 +49,7 @@ class BaseTimeSeriesModel:
             "n folds": (len(y.index) - self.window_params["min_period"]) // self.window_params["period_retraining"],
             "n features": len(X.columns) / (len(y.columns) if (isinstance(y, pd.DataFrame) and isinstance(X.columns, pd.MultiIndex)) else 1),
             "n columns": len(y.columns) if isinstance(y, pd.DataFrame) else 1,
-            "n datapoints": len(y.index) * ( 1 if isinstance(y, pd.DataFrame) and independant_fit else len(y.columns) ),
+            "n datapoints": len(y.index) * ( 1 if isinstance(y, pd.Series) or independant_fit else len(y.columns) ),
             "n trainings": (1 if independant_fit else len(y.columns)) * (len(y.index) - self.window_params["min_period"]) // self.window_params["period_retraining"],
             "model": self.model.__class__.__name__,
         })

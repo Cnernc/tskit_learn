@@ -172,8 +172,7 @@ def _fit_predict_shaped(
     return df_test['pred']
 
 def _fit_predict_multidimensional(
-        model:BaseEstimator | object, X: pd.DataFrame, y: pd.DataFrame, 
-        n_jobs: int, **window_params
+        model:BaseEstimator | object, X: pd.DataFrame, y: pd.DataFrame, n_jobs: int, **window_params
     ) -> pd.DataFrame:
 
     df = _reshaper(X, y)
