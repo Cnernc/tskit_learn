@@ -61,9 +61,7 @@ def _window_grouper(
 def _fit_predict_static(
         model: BaseEstimator | object, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray,
     ) -> np.ndarray:
-    """Static fit and predict for the multiprocessing"""
-    if (X_train.size == 0) or (y_train.size == 0) or (X_test.size == 0):
-        raise ValueError("Empty training or test data fed into the model.")
+    """Static fit and predict for the multiprocessing"""    
     y_hat = model.fit(X_train, y_train).predict(X_test)
     # del X_train, y_train, X_test
     return y_hat
@@ -74,9 +72,6 @@ def _fit_predict_ndarray(
         n_jobs: int
     ) -> np.ndarray:
     
-    assert X.shape[0] == y.shape[0], ("X and y should have the same number of rows")
-    assert np.all(np.isfinite(X)) and np.all(np.isfinite(y)), ("X and y should not have any missing/infinite values")
-
     X_generator = _window_grouper(X, freq_retraining, min_train_steps, rolling_window_size, lookahead_steps)
     y_generator = _window_grouper(y, freq_retraining, min_train_steps, rolling_window_size, lookahead_steps)
 
@@ -98,6 +93,7 @@ def _fit_predict_ds(
         rolling_window_size: int, lookahead_steps:int, 
         skipna: bool, n_jobs: int
     ) -> pd.Series:
+    
     assert not X.empty, f"No features for {y.name}"
 
     X = _clean_and_reindex(X, y)    
