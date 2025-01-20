@@ -63,8 +63,7 @@ def _fit_predict_static(
     ) -> np.ndarray:
     """Static fit and predict for the multiprocessing"""
     if (X_train.size == 0) or (y_train.size == 0) or (X_test.size == 0):
-        Warning("Empty training or test data fed into the model. Returning nan values")
-        return np.full((X_test.shape[0], y_train.shape[1]), np.nan)
+        raise ValueError("Empty training or test data fed into the model.")
     y_hat = model.fit(X_train, y_train).predict(X_test)
     # del X_train, y_train, X_test
     return y_hat
@@ -110,7 +109,7 @@ def _fit_predict_ds(
             rolling_window_size, lookahead_steps, 
             n_jobs
         )
-    except AssertionError as e:
+    except (AssertionError, ValueError) as e:
         print(f'An error occurred during the fit of {y.name}. Returning NaN values. {e}')
         y_hat_values = np.nan
 
