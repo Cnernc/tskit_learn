@@ -66,7 +66,7 @@ def _fit_predict_static(
         Warning("Empty training or test data fed into the model. Returning nan values")
         return np.full((X_test.shape[0], y_train.shape[1]), np.nan)
     y_hat = model.fit(X_train, y_train).predict(X_test)
-    del X_train, y_train, X_test
+    # del X_train, y_train, X_test
     return y_hat
 
 def _fit_predict_ndarray(
