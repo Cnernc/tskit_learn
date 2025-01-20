@@ -40,28 +40,22 @@ def _window_grouper(
     X: np.ndarray, freq_retraining: int, min_train_steps: int, rolling_window_size: int, lookahead_steps:int, 
 ) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
     
-    assert 2 < min_train_steps <= len(X), ("min_train_steps should be less than or equal to the length of X and greater than 2")
+    assert 2 < min_train_steps <= len(X) - min_train_steps, ("min_train_steps should be less than or equal to the length of X and greater than 2")
     assert freq_retraining <= len(X), ("freq_retraining should be less than or equal to the length of X")
     assert lookahead_steps < min_train_steps, ("lookahead_steps should be less than min_train_steps")
 
-    def _get_slices(training_date:int) -> tuple[slice, slice]:
+    training_date = min_train_steps
+    while training_date < len(X) - 1:
         start_training = max(0, training_date - 1 - rolling_window_size ) if rolling_window_size else 0
         end_training = training_date - 1 - lookahead_steps
         start_test = training_date
         end_test = min(training_date + freq_retraining, len(X))
-        return slice(start_training, end_training), slice(start_test, end_test)
-
-    for training_date in range(min_train_steps, len(X), freq_retraining):
-        training_slice, test_slice = _get_slices(training_date)
-        X_train, X_test = X[training_slice], X[test_slice]
-        yield X_train, X_test
-
+        yield X[start_training:end_training], X[start_test:end_test]
+        training_date += freq_retraining
 def _fit_predict_static(
         model: BaseEstimator | object, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray,
     ) -> np.ndarray:
-    """Static fit and predict for the multiprocessing"""    
     y_hat = model.fit(X_train, y_train).predict(X_test)
-    # del X_train, y_train, X_test
     return y_hat
 
 def _fit_predict_ndarray(
