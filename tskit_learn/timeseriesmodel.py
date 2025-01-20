@@ -12,15 +12,15 @@ class BaseTimeSeriesModel:
         
     def __init__(
         self, model: BaseEstimator | object, 
-        freq_retraining: int, rolling_window_size: int, 
-        min_train_steps: int, lookahead_steps: int,
+        period_retraining: int, rolling_window_size: int, 
+        min_period: int, lookahead_steps: int,
     ) -> None:
         
         self.model = model        
         self.window_params = {
             "rolling_window_size": rolling_window_size,
-            "freq_retraining": freq_retraining,
-            "min_train_steps": max(min_train_steps if min_train_steps else freq_retraining, lookahead_steps),
+            "period_retraining": period_retraining,
+            "min_period": max(min_period if min_period else period_retraining, lookahead_steps - 1),
             "lookahead_steps": lookahead_steps,
         }
 
@@ -46,11 +46,11 @@ class BaseTimeSeriesModel:
         
 
         print({
-            "n folds": (len(y.index) - self.window_params["min_train_steps"]) // self.window_params["freq_retraining"],
+            "n folds": (len(y.index) - self.window_params["min_period"]) // self.window_params["period_retraining"],
             "n features": len(X.columns) / (len(y.columns) if (isinstance(y, pd.DataFrame) and isinstance(X.columns, pd.MultiIndex)) else 1),
             "n columns": len(y.columns) if isinstance(y, pd.DataFrame) else 1,
             "n datapoints": len(y.index) * ( 1 if isinstance(y, pd.DataFrame) and independant_fit else len(y.columns) ),
-            "n trainings": (1 if independant_fit else len(y.columns)) * (len(y.index) - self.window_params["min_train_steps"]) // self.window_params["freq_retraining"],
+            "n trainings": (1 if independant_fit else len(y.columns)) * (len(y.index) - self.window_params["min_period"]) // self.window_params["period_retraining"],
             "model": self.model.__class__.__name__,
         })
 
@@ -101,20 +101,26 @@ class BaseTimeSeriesModel:
 class RollingModel(BaseTimeSeriesModel):
     def __init__(
         self, model: BaseEstimator | object, 
-        window_size: int, freq_retraining: int = 1, 
+        rolling_window_size: int, period_retraining: int = 1, 
         lookahead_steps:int = 0,
     ) -> None:
         super().__init__(
-            model = model, freq_retraining=freq_retraining, rolling_window_size=window_size, 
-            min_train_steps=window_size, lookahead_steps=lookahead_steps, 
+            model = model, 
+            period_retraining=period_retraining, 
+            rolling_window_size=rolling_window_size, 
+            min_period=rolling_window_size, 
+            lookahead_steps=lookahead_steps, 
         )
 
 class ExpandingModel(BaseTimeSeriesModel):
     def __init__(
-        self, model: BaseEstimator | object, freq_retraining: int, 
-        min_train_steps: int = None, lookahead_steps:int = 0,
+        self, model: BaseEstimator | object, period_retraining: int, 
+        min_period: int = None, lookahead_steps:int = 0,
     ) -> None:
         super().__init__(
-            model = model, freq_retraining=freq_retraining, rolling_window_size=None, 
-            min_train_steps=min_train_steps, lookahead_steps=lookahead_steps, 
+            model = model, 
+            period_retraining=period_retraining, 
+            rolling_window_size=None, 
+            min_period=min_period, 
+            lookahead_steps=lookahead_steps, 
         )
