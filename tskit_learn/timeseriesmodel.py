@@ -54,7 +54,7 @@ class BaseTimeSeriesModel:
             "n features": len(X.columns) / (len(y.columns) if isinstance(y, pd.DataFrame) else 1),
             "n columns": len(y.columns) if isinstance(y, pd.DataFrame) else 1,
             "n datapoints": len(y.index) * ( 1 if isinstance(y, pd.DataFrame) and independant_fit else len(y.columns) ),
-            "n trainings": (len(y.columns) if independant_fit else 1) * (len(y.index) - self.window_params["min_train_steps"]) // self.window_params["freq_retraining"],
+            "n trainings": (1 if independant_fit else len(y.columns)) * (len(y.index) - self.window_params["min_train_steps"]) // self.window_params["freq_retraining"],
             "model": self.model.__class__.__name__,
         })
 
