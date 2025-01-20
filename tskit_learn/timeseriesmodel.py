@@ -16,16 +16,18 @@ class BaseTimeSeriesModel:
         min_train_steps: int, lookahead_steps: int,
     ) -> None:
         
-        self.model = model
-        assert rolling_window_size is None or rolling_window_size > lookahead_steps, (
-            "rolling_window_size should be greater than lookahead_steps"
-            )
+        self.model = model        
         self.window_params = {
             "rolling_window_size": rolling_window_size,
             "freq_retraining": freq_retraining,
             "min_train_steps": max(min_train_steps if min_train_steps else freq_retraining, lookahead_steps),
             "lookahead_steps": lookahead_steps,
         }
+
+        assert all(isinstance(val, int) for val in self.window_params.values())
+        assert rolling_window_size is None or rolling_window_size > lookahead_steps, (
+            "rolling_window_size should be greater than lookahead_steps"
+            )
         
         if not isinstance(model,  BaseEstimator):
             assert hasattr(model, "fit") and hasattr(model, "predict"), (
