@@ -109,7 +109,7 @@ def _fit_predict_ds(
             rolling_window_size, lookahead_steps, 
             n_jobs
         )
-    except Exception as e:
+    except AssertionError as e:
         print(f'An error occurred during the fit of {y.name}. Returning NaN values. {e}')
         y_hat_values = np.nan
 
