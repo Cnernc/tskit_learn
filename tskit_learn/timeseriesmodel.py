@@ -54,14 +54,19 @@ class BaseTimeSeriesModel:
             "model": self.model.__class__.__name__,
         })
 
+        kwargs = {
+            "model": self.model, "X": X.copy(), "y": y.copy(),
+            **self.window_params,
+            "n_jobs": BaseTimeSeriesModel.n_jobs,
+        }
 
         match (type(X), type(y)):
             case (np.ndarray, np.ndarray):
-                y_hat = _fit_predict_ndarray(self.model, X, y, **self.window_params, n_jobs=BaseTimeSeriesModel.n_jobs)
+                y_hat = _fit_predict_ndarray(**kwargs)
             case (pd.DataFrame, pd.Series):
-                y_hat = _fit_predict_ds(self.model, X, y, **self.window_params, skipna=skipna, n_jobs=BaseTimeSeriesModel.n_jobs)
+                y_hat = _fit_predict_ds(**kwargs, skipna=skipna)
             case (pd.DataFrame, pd.DataFrame):
-                y_hat = _fit_predict_df(self.model, X, y, **self.window_params, independant_fit=independant_fit, skipna=skipna,n_jobs=BaseTimeSeriesModel.n_jobs)                
+                y_hat = _fit_predict_df(**kwargs, independant_fit=independant_fit, skipna=skipna)                
             case _:
                 raise ValueError(
                     f"""Unsupported types: X type {type(X)}, y type {type(y)}. X,y should be in :

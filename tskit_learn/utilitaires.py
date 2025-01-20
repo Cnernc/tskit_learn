@@ -87,9 +87,7 @@ def _fit_predict_ndarray(
     )
 
     with mp.Pool(n_jobs) as pool:
-        results = pool.starmap(
-            _fit_predict_static, tasks
-            )
+        results = pool.starmap(_fit_predict_static, tasks)
 
     y_hat = np.concatenate(results)
     return np.concatenate([np.full(len(y) - len(y_hat), np.nan), y_hat])
