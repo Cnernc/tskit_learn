@@ -44,17 +44,16 @@ def _window_grouper(
     assert freq_retraining <= len(X), ("freq_retraining should be less than or equal to the length of X")
     assert lookahead_steps < min_train_steps, ("lookahead_steps should be less than min_train_steps")
 
-    def _get_slices() -> tuple[slice, slice]:
-        if rolling_window_size:
-            training_slice = slice(max(0, training_date - 1 - rolling_window_size ), training_date - 1 - lookahead_steps)
-            test_slice = slice(training_date, min(training_date + freq_retraining, len(X)))
-        else:
-            training_slice = slice(0, training_date - 1 - lookahead_steps)
-            test_slice = slice(training_date, min(training_date + freq_retraining, len(X)))
-        return training_slice, test_slice
+    def _get_slices(training_date:int) -> tuple[slice, slice]:
+
+        start_training = max(0, training_date - 1 - rolling_window_size ) if rolling_window_size else 0
+        end_training = training_date - 1 - lookahead_steps
+        start_test = training_date
+        end_test = min(training_date + freq_retraining, len(X))
+        return slice(start_training, end_training), slice(start_test, end_test)
 
     for training_date in range(min_train_steps, len(X), freq_retraining):
-        training_slice, test_slice = _get_slices()
+        training_slice, test_slice = _get_slices(training_date)
         X_train, X_test = X[training_slice], X[test_slice]
         yield X_train, X_test
 
@@ -93,7 +92,7 @@ def _fit_predict_ds(
         rolling_window_size: int, lookahead_steps:int, 
         skipna: bool, n_jobs: int
     ) -> pd.Series:
-    
+
     assert not X.empty, f"No features for {y.name}"
 
     X = _clean_and_reindex(X, y)    
