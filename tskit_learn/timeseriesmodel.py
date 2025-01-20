@@ -51,7 +51,7 @@ class BaseTimeSeriesModel:
         }
         print({
             "n folds": (len(y.index) - self.window_params["min_train_steps"]) // self.window_params["freq_retraining"],
-            "n features": len(X.columns) / (len(y.columns) if isinstance(y, pd.DataFrame) else 1),
+            "n features": len(X.columns) / (len(y.columns) if (isinstance(y, pd.DataFrame) and isinstance(X.columns, pd.MultiIndex)) else 1),
             "n columns": len(y.columns) if isinstance(y, pd.DataFrame) else 1,
             "n datapoints": len(y.index) * ( 1 if isinstance(y, pd.DataFrame) and independant_fit else len(y.columns) ),
             "n trainings": (1 if independant_fit else len(y.columns)) * (len(y.index) - self.window_params["min_train_steps"]) // self.window_params["freq_retraining"],
