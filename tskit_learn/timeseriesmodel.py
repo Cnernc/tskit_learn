@@ -54,6 +54,9 @@ class BaseTimeSeriesModel:
             "model": self.model.__class__.__name__,
         })
 
+        assert len(y.index) > self.window_params["min_period"], "min_period should be less than the length of y"
+        assert len(y.index) > self.window_params["period_retraining"], "period_retraining should be less than the length of y"
+
         kwargs = {
             "model": self.model, "X": X.copy(), "y": y.copy(),
             **self.window_params,
