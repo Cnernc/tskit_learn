@@ -96,9 +96,10 @@ def _fit_predict_ndarray(
 
 def _fit_predict_ds(
         model: BaseEstimator | object, X: pd.DataFrame, y: pd.Series,
-        freq_retraining: int, min_train_steps: int, rolling_window_size: int, lookahead_steps:int, 
+        freq_retraining: int, min_train_steps: int, 
+        rolling_window_size: int, lookahead_steps:int, 
         skipna: bool, n_jobs: int
-        ) -> pd.Series:
+    ) -> pd.Series:
     assert not X.empty, f"No features for {y.name}"
 
     X = _clean_and_reindex(X, y)    
@@ -106,37 +107,37 @@ def _fit_predict_ds(
     try:
         y_hat_values = _fit_predict_ndarray(
             model, X.values, y_.values, 
-            freq_retraining, min_train_steps, rolling_window_size, lookahead_steps, 
+            freq_retraining, min_train_steps, 
+            rolling_window_size, lookahead_steps, 
             n_jobs
         )
     except Exception as e:
         print(f'An error occurred during the fit of {y.name}. Returning NaN values. {e}')
         y_hat_values = np.nan
-    return pd.Series(
-        data=y_hat_values, name=y.name, index=y.index
-        )
+
+    return pd.Series(data=y_hat_values, name=y.name, index=y.index)
 
 
 ##### Unidimensional fit and predict: #####
 ##### train each asset separately     #####
 
 def _fit_predict_unidimensional(
-        model, X: pd.DataFrame, y: pd.DataFrame, skipna: bool, 
-        freq_retraining: int, min_train_steps: int, rolling_window_size: int, lookahead_steps:int, 
-        n_jobs: int
+        model: BaseEstimator | object, X: pd.DataFrame, y: pd.DataFrame, 
+        freq_retraining: int, min_train_steps: int, 
+        rolling_window_size: int, lookahead_steps:int, 
+        n_jobs: int, skipna: bool
     ) -> pd.DataFrame:
 
-    y_hat = pd.DataFrame(index = y.index)
-    for col in y.columns:
+    def _fit_helper(col:str) -> pd.Series:
         X_ = X.loc[:, col] if isinstance(X.columns, pd.MultiIndex) else X
         y_ = y.loc[:, col] if not skipna else y.loc[:, col].dropna()
-        y_hat[col] = _fit_predict_ds(
+        return _fit_predict_ds(
             model, X_, y_, 
             freq_retraining, min_train_steps, rolling_window_size, lookahead_steps, 
             skipna, n_jobs
         )
 
-    return y_hat
+    return pd.concat({col: _fit_helper(col) for col in y.columns}, axis=1)
 
 
 ##### Multidimensional fit and predict:             #####
@@ -214,7 +215,7 @@ def _fit_predict_multidimensional(
     )
     if any(y_hat.isna().all()):
         print(f"Warning: {y_hat[y_hat.isna().all()].columns} models returned NaN values")
-        
+
     return y_hat
 
 def _fit_predict_df(
