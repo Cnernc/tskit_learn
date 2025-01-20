@@ -45,7 +45,6 @@ def _window_grouper(
     assert lookahead_steps < min_train_steps, ("lookahead_steps should be less than min_train_steps")
 
     def _get_slices(training_date:int) -> tuple[slice, slice]:
-
         start_training = max(0, training_date - 1 - rolling_window_size ) if rolling_window_size else 0
         end_training = training_date - 1 - lookahead_steps
         start_test = training_date
