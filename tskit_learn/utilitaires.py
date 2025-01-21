@@ -68,7 +68,8 @@ def _fit_predict_static(
     return y_hat
 
 def _fit_predict_ndarray(
-        model: BaseEstimator | object, X: np.ndarray, y: np.ndarray, 
+        model: BaseEstimator | object, 
+        X: np.ndarray, y: np.ndarray, 
         n_jobs: int, **window_params,
     ) -> np.ndarray:
     
