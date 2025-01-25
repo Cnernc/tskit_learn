@@ -24,7 +24,7 @@ class BaseTimeSeriesModel:
             "lookahead_steps": lookahead_steps,
         }
 
-        assert all(isinstance(val, int) for val in self.window_params.values())
+        assert all(isinstance(val, int) for val in self.window_params.values() if val is not None)
         assert rolling_window_size is None or rolling_window_size > lookahead_steps, (
             "rolling_window_size should be greater than lookahead_steps"
             )
