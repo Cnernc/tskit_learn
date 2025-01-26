@@ -165,12 +165,18 @@ def _reshaper(X:pd.DataFrame, y:pd.DataFrame) -> pd.DataFrame:
 def _fit_predict_shaped(
         model: BaseEstimator | object, df_train:pd.DataFrame, df_test:pd.DataFrame
     ) -> pd.DataFrame:
-    X_train = df_train.drop(columns=['date', 'asset', 'target'])
-    y_train = df_train['target']
-    X_test  = df_test.drop(columns=['date', 'asset', 'target'])
-    df_test['pred'] = model.fit(X_train, y_train).predict(X_test)
-    df_test = df_test.set_index(['date', 'asset']).unstack()
-    return df_test['pred']
+
+    try:
+        X_train = df_train.drop(columns=['date', 'asset', 'target'])
+        y_train = df_train['target']
+        X_test  = df_test.drop(columns=['date', 'asset', 'target'])
+        df_test['pred'] = model.fit(X_train, y_train).predict(X_test)
+        df_test = df_test.set_index(['date', 'asset']).unstack()
+        y_hat = df_test['pred']
+    except Exception as e:
+        print(f"An error occurred during the fit of the model. Returning NaN values. {e}")
+        y_hat = pd.Series(index=df_test.index)
+    return y_hat
 
 def _fit_predict_multidimensional(
         model:BaseEstimator | object, X: pd.DataFrame, y: pd.DataFrame, n_jobs: int, **window_params

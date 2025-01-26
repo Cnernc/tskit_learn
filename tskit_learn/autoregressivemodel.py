@@ -10,6 +10,7 @@ class AutoRegressiveModel(BaseTimeSeriesModel):
         freq_retraining: int, lookahead_steps: int = 0, min_train_steps: int = None,
         autoregressive_order: int = 0, integration_order: int = 0, moving_average_order: int = 0,
     ) -> None:
+        raise NotImplementedError("AutoRegressiveModel is not yet implemented")
         super().__init__(
             model=model, freq_retraining=freq_retraining, rolling_window_size=None, 
             min_train_steps=min_train_steps, lookahead_steps=lookahead_steps, 
